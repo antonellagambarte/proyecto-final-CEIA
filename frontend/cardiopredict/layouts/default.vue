@@ -13,33 +13,26 @@
 
       <v-divider></v-divider>
 
-      <v-list nav>
+      <v-list nav class="mt-2">
         <v-list-item
           v-for="(item, i) in items"
           :key="i"
           :to="item.to"
           router
           exact
-          class="my-2"
+          class="my-2 custom-item"
         >
           <v-list-item-action>
-            <v-icon size="20" color="white">{{ item.icon }}</v-icon>
+            <v-icon size="20" class="item-icon">{{ item.icon }}</v-icon>
           </v-list-item-action>
           <v-list-item-content>
-            <v-list-item-title class="white--text" v-text="item.title" />
+            <v-list-item-title class="item-text" v-text="item.title" />
           </v-list-item-content>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar fixed app flat color="#1e1e1e">
-      <v-btn icon>
-        <v-icon>fas fa-bell</v-icon>
-      </v-btn>
-      <v-btn icon>
-        <v-icon>fas fa-user-circle</v-icon>
-      </v-btn>
-    </v-app-bar>
+    <v-app-bar fixed app flat color="#1e1e1e" />
 
     <v-main style="background-color: #121212; height: 100vh; overflow: hidden">
       <v-container fluid class="pa-0">
@@ -48,7 +41,7 @@
     </v-main>
 
     <v-footer app flat color="#1e1e1e" class="justify-center">
-      <span class="grey--text text--darken-1">
+      <span class="grey--text text--darken-1 caption">
         &copy; {{ new Date().getFullYear() }} - CardioPredict AI
       </span>
     </v-footer>
@@ -60,8 +53,12 @@ export default {
   data() {
     return {
       drawer: true,
-      // ESTA ES LA LISTA QUE FALTABA:
       items: [
+        {
+          icon: "fas fa-home",
+          title: "Inicio",
+          to: "/",
+        },
         {
           icon: "fas fa-user-plus",
           title: "Nuevo paciente",
@@ -71,11 +68,6 @@ export default {
           icon: "fas fa-history",
           title: "Historial",
           to: "/historial",
-        },
-        {
-          icon: "fas fa-chart-line",
-          title: "Análisis",
-          to: "/analisis",
         },
       ],
     };
@@ -91,9 +83,20 @@ export default {
   align-items: center;
 }
 
-/* Color cian para el ítem activo */
-.v-list-item--active .v-list-item__title,
-.v-list-item--active .v-icon {
+/* Estilo de los items (texto e icono blancos por defecto) */
+.item-text,
+.item-icon {
+  color: #ffffff !important;
+}
+
+/* Color cian solo para el ítem activo, tal como estaba antes */
+.v-list-item--active .item-text,
+.v-list-item--active .item-icon {
   color: #26c6da !important;
+}
+
+/* Fondo gris oscuro para el ítem activo para que se parezca a tu imagen 1 */
+.v-list-item--active {
+  background-color: #4a4444 !important;
 }
 </style>
