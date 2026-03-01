@@ -4,12 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import models 
 import schemas
 from database import SessionLocal, engine
-import predictor
+import predictor # Tu lógica de CatBoost
 
-# Usamos los modelos definidos en models.py para crear las tablas en Postgres
+# Crear las tablas en el archivo SQLite (sql_app.db)
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="CardioPredict API - SQLite Version")
 
 # Configuración de CORS
 app.add_middleware(
@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ESTA ES LA FUNCIÓN QUE TE FALTABA
+# Dependencia para la base de datos SQLite
 def get_db():
     db = SessionLocal()
     try:
@@ -28,9 +28,59 @@ def get_db():
     finally:
         db.close()
 
+# --- RUTAS ---
+
 @app.get("/")
 def home():
-    return {"message": "API de CardioPredict conectada a la base de datos"}
+    return {"message": "Backend CardioPredict activo con SQLite"}
+
+# RUTA PARA EL BOTÓN "PREDECIR" (Solo simulación)
+@app.post("/pacientes/predecir")
+def predecir_al_vuelo(datos: dict):
+    """
+    Simulador: El médico puede probar valores infinitas veces.
+    NO guarda nada en la base de datos.
+    """
+    try:
+        # Detectar si es etapa 1 o 2 para el modelo
+        etapa_a_usar = 2 if datos.get("creatinina") else 1
+        
+        probabilidad = predictor.ejecutar_prediccion(datos, etapa=etapa_a_usar)
+        
+        return {
+            "probabilidad": probabilidad,
+            "riesgo": "Alto" if probabilidad > 0.5 else "Bajo",
+            "etapa_aplicada": etapa_a_usar
+        }
+    except Exception as e:
+        print(f"Error en simulación: {e}")
+        raise HTTPException(status_code=500, detail="Error al procesar la predicción")
+
+# RUTA PARA EL BOTÓN "GUARDAR" (Persistencia definitiva)
+@app.post("/pacientes/", response_model=schemas.Paciente)
+def guardar_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_db)):
+    """
+    Confirmación: Guarda al paciente en el archivo .db e incluye el score.
+    """
+    datos_dict = paciente.model_dump()
+    
+    # Recalculamos la predicción final para asegurar el dato antes de guardar
+    etapa = 2 if datos_dict.get("creatinina") is not None else 1
+    score_ia = predictor.ejecutar_prediccion(datos_dict, etapa=etapa)
+
+    # Mapeo al modelo de base de datos
+    nuevo_paciente = models.Paciente(**datos_dict)
+    nuevo_paciente.probabilidad_riesgo = score_ia
+    
+    try:
+        db.add(nuevo_paciente)
+        db.commit()
+        db.refresh(nuevo_paciente)
+        return nuevo_paciente
+    except Exception as e:
+        db.rollback()
+        print(f"Error al guardar en SQLite: {e}")
+        raise HTTPException(status_code=500, detail="No se pudo guardar en la base de datos")
 
 @app.get("/pacientes/{dni}", response_model=schemas.Paciente)
 def obtener_paciente(dni: str, db: Session = Depends(get_db)):
@@ -38,35 +88,3 @@ def obtener_paciente(dni: str, db: Session = Depends(get_db)):
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
     return paciente
-
-import predictor  # Importante: asegurate de que el archivo predictor.py esté en la misma carpeta
-
-@app.post("/pacientes/", response_model=schemas.Paciente)
-def crear_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_db)):
-    # 1. Convertimos los datos que vienen del frontend a un diccionario
-    datos_dict = paciente.model_dump()
-    
-    # 2. Decidimos qué etapa usar (Lógica de negocio)
-    # Si el médico cargó datos clínicos (etapa 2), usamos el modelo 2.
-    # Si solo hay datos básicos, usamos etapa 1.
-    # (Usamos la creatinina como "indicador" de que es etapa 2)
-    etapa_a_usar = 2 if datos_dict.get("creatinina") is not None else 1
-    
-    # 3. Llamamos a la IA para obtener la probabilidad
-    try:
-        score_ia = predictor.ejecutar_prediccion(datos_dict, etapa=etapa_a_usar)
-    except Exception as e:
-        # Si la IA falla, podemos guardar el error o poner un valor por defecto
-        print(f"Error en la predicción: {e}")
-        score_ia = 0.0
-
-    # 4. Creamos el registro para la base de datos
-    nuevo_paciente = models.Paciente(**datos_dict)
-    nuevo_paciente.probabilidad_riesgo = score_ia
-    
-    # 5. Guardar en PostgreSQL
-    db.add(nuevo_paciente)
-    db.commit()
-    db.refresh(nuevo_paciente)
-    
-    return nuevo_paciente

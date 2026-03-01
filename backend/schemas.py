@@ -21,14 +21,14 @@ class PacienteBase(BaseModel):
     riñones_debiles_fallando: float
     hipertension: float
     diabetes: float
-    colesterol_total: float
-    hdl: float
-    trigliceridos: float
-    proteina_c: float
-    hemoglobina: float
-    creatinina: float
-    acido_urico: float
-    potasio: float
+    colesterol_total: Optional[float] = None
+    hdl: Optional[float] = None
+    trigliceridos: Optional[float] = None
+    proteina_c: Optional[float] = None
+    hemoglobina: Optional[float] = None
+    creatinina: Optional[float] = None
+    acido_urico: Optional[float] = None
+    potasio: Optional[float] = None
 
 # Esto se usa cuando creamos un paciente (es igual al anterior)
 class PacienteCreate(PacienteBase):
