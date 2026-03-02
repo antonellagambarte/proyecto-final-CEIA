@@ -44,6 +44,7 @@
                   dark
                   hide-details
                   dense
+                  placeholder="Ingrese apellido"
                   :readonly="!bloqueoEdicion"
                 ></v-text-field>
               </v-col>
@@ -56,6 +57,7 @@
                   dark
                   hide-details
                   dense
+                  placeholder="Ingrese nombre"
                   :readonly="!bloqueoEdicion"
                 ></v-text-field>
               </v-col>
@@ -66,6 +68,7 @@
                 <v-select
                   v-model="form.genero"
                   :items="['Masculino', 'Femenino']"
+                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
@@ -83,6 +86,7 @@
                   dark
                   hide-details
                   dense
+                  placeholder="Ej: 40123456"
                   :readonly="!bloqueoEdicion"
                 ></v-text-field>
               </v-col>
@@ -95,6 +99,7 @@
                   dark
                   hide-details
                   dense
+                  placeholder="0"
                   :readonly="!bloqueoEdicion"
                 ></v-text-field>
               </v-col>
@@ -108,7 +113,10 @@
                 <p class="custom-label">¿Es diabético?</p>
                 <v-select
                   v-model="form.diabetico"
-                  :items="['Sí', 'No']"
+                  :items="itemsDiabetes"
+                  item-text="text"
+                  item-value="value"
+                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
@@ -121,7 +129,10 @@
                 <p class="custom-label">¿Tiene problemas renales?</p>
                 <v-select
                   v-model="form.renales"
-                  :items="['Sí', 'No']"
+                  :items="itemsCompletos"
+                  item-text="text"
+                  item-value="value"
+                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
@@ -138,7 +149,11 @@
               <v-col cols="12" md="10">
                 <p class="custom-label">{{ q.label }}</p>
                 <v-select
+                  v-model="form[q.key]"
                   :items="q.options"
+                  item-text="text"
+                  item-value="value"
+                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
@@ -155,13 +170,17 @@
               <v-col
                 cols="12"
                 md="5"
-                v-for="ant in ['Enfermedad cardiovascular', 'Diabetes', 'Asma']"
-                :key="ant"
+                v-for="ant in antecedentesFamiliaresConfig"
+                :key="ant.key"
                 class="mb-4"
               >
-                <p class="custom-label">{{ ant }}</p>
+                <p class="custom-label">{{ ant.label }}</p>
                 <v-select
-                  :items="['Sí', 'No']"
+                  v-model="form[ant.key]"
+                  :items="itemsCompletos"
+                  item-text="text"
+                  item-value="value"
+                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
@@ -179,21 +198,18 @@
               <v-col
                 cols="6"
                 md="3"
-                v-for="itemF in [
-                  'Altura (m)',
-                  'Peso (Kg)',
-                  'Presión sistólica',
-                  'Presión distólica',
-                ]"
-                :key="itemF"
+                v-for="itemF in evaluacionFisicaConfig"
+                :key="itemF.key"
               >
-                <p class="custom-label">{{ itemF }}</p>
+                <p class="custom-label">{{ itemF.label }}</p>
                 <v-text-field
+                  v-model="form[itemF.key]"
                   solo
                   background-color="#4a4444"
                   dark
                   hide-details
                   dense
+                  placeholder="0.00"
                   :readonly="!bloqueoEdicion"
                 ></v-text-field>
               </v-col>
@@ -210,17 +226,19 @@
               <v-row dense class="mb-4">
                 <v-col
                   v-for="campo in sec.campos"
-                  :key="campo"
+                  :key="campo.key"
                   cols="12"
                   md="4"
                 >
-                  <p class="custom-label">{{ campo }}</p>
+                  <p class="custom-label">{{ campo.label }}</p>
                   <v-text-field
+                    v-model="form[campo.key]"
                     solo
                     background-color="#4a4444"
                     dark
                     hide-details
                     dense
+                    placeholder="Valor"
                     :readonly="!bloqueoEdicion"
                   ></v-text-field>
                 </v-col>
@@ -249,17 +267,10 @@
             v-else
             color="success"
             class="white--text mr-4 custom-btn"
-            @click="bloqueoEdicion = false"
+            @click="guardarCambios"
             >GUARDAR CAMBIOS</v-btn
           >
-          <v-btn
-            color="#635b5b"
-            class="white--text mr-4 custom-btn"
-            @click="paso = 4"
-            >IR A LABORATORIO</v-btn
-          >
         </template>
-
         <v-btn
           v-if="paso >= 3"
           outlined
@@ -275,9 +286,7 @@
           class="white--text custom-btn px-10"
           @click="siguiente"
         >
-          {{
-            paso === 4 ? "FINALIZAR" : modoEdicion ? "SIGUIENTE" : "SIGUIENTE"
-          }}
+          {{ paso === 4 ? "FINALIZAR" : "SIGUIENTE" }}
         </v-btn>
       </v-row>
     </v-sheet>
@@ -285,6 +294,14 @@
 </template>
 
 <script>
+import {
+  OpcionesCompletas,
+  OpcionesBinarias,
+  OpcionesDiabetes,
+  OpcionesAlcohol,
+  OpcionesAnhedonia,
+} from "~/constants/opciones";
+
 export default {
   props: {
     datosIniciales: { type: Object, default: () => ({}) },
@@ -293,62 +310,184 @@ export default {
   data() {
     return {
       paso: 1,
-      // Si estamos en modoEdicion, los campos empiezan bloqueados (readonly)
       bloqueoEdicion: !this.modoEdicion,
       form: {
         apellido: this.datosIniciales.apellido || "",
         nombre: this.datosIniciales.nombre || "",
-        genero: this.datosIniciales.genero || "",
+        genero: this.datosIniciales.genero || null,
         dni: this.datosIniciales.dni || "",
-        edad: this.datosIniciales.edad || "",
-        diabetico: this.datosIniciales.diabetico || "No",
-        renales: this.datosIniciales.renales || "No",
+        edad: this.datosIniciales.edad || null,
+        diabetico: this.datosIniciales.diabetico || null,
+        renales: this.datosIniciales.renales || null,
+        alcohol: this.datosIniciales.alcohol || null,
+        ejercicio: this.datosIniciales.ejercicio || null,
+        fumador: this.datosIniciales.fumador || null,
+        anhedonia: this.datosIniciales.anhedonia || null,
+        ant_cardio: this.datosIniciales.ant_cardio || null,
+        ant_diabetes: this.datosIniciales.ant_diabetes || null,
+        ant_asma: this.datosIniciales.ant_asma || null,
+        altura: this.datosIniciales.altura || null,
+        peso: this.datosIniciales.peso || null,
+        presion_sis: this.datosIniciales.presion_sis || null,
+        presion_dis: this.datosIniciales.presion_dis || null,
+        colesterol: this.datosIniciales.colesterol || null,
+        hdl: this.datosIniciales.hdl || null,
+        trigliceridos: this.datosIniciales.trigliceridos || null,
+        creatinina: this.datosIniciales.creatinina || null,
+        pcr: this.datosIniciales.pcr || null,
+        hemoglobina: this.datosIniciales.hemoglobina || null,
+        acido_urico: this.datosIniciales.acido_urico || null,
+        potasio: this.datosIniciales.potasio || null,
       },
+      // LISTAS ESTÁNDAR PARA SELECTORES
+      itemsBinarios: [
+        { text: "Sí", value: OpcionesBinarias.SI },
+        { text: "No", value: OpcionesBinarias.NO },
+      ],
+      itemsCompletos: [
+        { text: "Sí", value: OpcionesCompletas.SI },
+        { text: "No", value: OpcionesCompletas.NO },
+        { text: "No sabe", value: OpcionesCompletas.NO_SABE },
+      ],
+      itemsDiabetes: [
+        { text: "Sí", value: OpcionesDiabetes.SI },
+        { text: "No", value: OpcionesDiabetes.NO },
+        { text: "No sabe", value: OpcionesDiabetes.NO_SABE },
+        { text: "Prediabetes", value: OpcionesDiabetes.PREDIABETES },
+      ],
+      itemsAlcohol: [
+        { text: "Nunca en el último año", value: OpcionesAlcohol.NUNCA },
+        { text: "Todos los días", value: OpcionesAlcohol.DIARIAMENTE },
+        { text: "Casi todos los días", value: OpcionesAlcohol.CASI_DIARIO },
+        {
+          text: "3 a 4 veces por semana",
+          value: OpcionesAlcohol.TRES_CUATRO_SEMANA,
+        },
+        { text: "2 veces por semana", value: OpcionesAlcohol.DOS_VECES_SEMANA },
+        { text: "Una vez por semana", value: OpcionesAlcohol.UNA_VEZ_SEMANA },
+        { text: "2 a 3 veces por mes", value: OpcionesAlcohol.DOS_TRES_MES },
+        { text: "Una vez al mes", value: OpcionesAlcohol.UNA_VEZ_MES },
+        {
+          text: "7 a 11 veces en el último año",
+          value: OpcionesAlcohol.SIETE_ONCE_AÑO,
+        },
+        {
+          text: "3 a 6 veces en el último año",
+          value: OpcionesAlcohol.TRES_SEIS_AÑO,
+        },
+        {
+          text: "1 a 2 veces en el último año",
+          value: OpcionesAlcohol.UNA_DOS_AÑO,
+        },
+        { text: "No sabe / No recuerda", value: OpcionesAlcohol.NO_SABE },
+      ],
+      ItemsAnhedonia: [
+        { text: "Para nada", value: OpcionesAnhedonia.NADA },
+        { text: "Varios días", value: OpcionesAnhedonia.VARIOS_DIAS },
+        {
+          text: "Más de la mitad de los días",
+          value: OpcionesAnhedonia.MAS_DE_LA_MITAD,
+        },
+        { text: "Casi todos los días", value: OpcionesAnhedonia.CASI_DIARIO },
+        { text: "No sabe / No recuerda", value: OpcionesAnhedonia.NO_SABE },
+      ],
       titulos: [
         "Datos personales",
         "Estilo de vida",
         "Antecedentes familiares",
         "Resultados de laboratorio",
       ],
-      preguntasVida: [
-        {
-          label: "Frecuencia de consumo de alcohol",
-          options: ["Nunca", "Ocasionalmente", "Semanal", "Diario"],
-        },
-        {
-          label: "Días de actividad física moderada",
-          options: ["0 días", "1-2 días", "3-5 días", "+5 días"],
-        },
-        {
-          label: "¿Ha fumado al menos 100 cigarrillos?",
-          options: ["Sí", "No"],
-        },
-        { label: "Presencia de Anhedonia", options: ["Sí", "No"] },
+
+      // CONFIGURACIÓN DE PREGUNTAS DINÁMICAS (PASO 2)
+      preguntasVida: [],
+      antecedentesFamiliaresConfig: [
+        { key: "ant_cardio", label: "Enfermedad cardiovascular" },
+        { key: "ant_diabetes", label: "Diabetes" },
+        { key: "ant_asma", label: "Asma" },
+      ],
+      evaluacionFisicaConfig: [
+        { key: "altura", label: "Altura (m)" },
+        { key: "peso", label: "Peso (Kg)" },
+        { key: "presion_sis", label: "Presión sistólica" },
+        { key: "presion_dis", label: "Presión diastólica" },
       ],
       laboratorio: [
         {
           titulo: "Perfil lipídico",
-          campos: ["Colesterol total", "HDL", "Triglicéridos"],
+          campos: [
+            { key: "colesterol", label: "Colesterol total" },
+            { key: "hdl", label: "HDL" },
+            { key: "trigliceridos", label: "Triglicéridos" },
+          ],
         },
-        { titulo: "Función renal", campos: ["Creatinina", "Proteína C (PCR)"] },
+        {
+          titulo: "Función renal",
+          campos: [
+            { key: "creatinina", label: "Creatinina" },
+            { key: "pcr", label: "Proteína C (PCR)" },
+          ],
+        },
         {
           titulo: "Hematología y otros",
-          campos: ["Hemoglobina", "Ácido úrico", "Potasio"],
+          campos: [
+            { key: "hemoglobina", label: "Hemoglobina" },
+            { key: "acido_urico", label: "Ácido úrico" },
+            { key: "potasio", label: "Potasio" },
+          ],
         },
       ],
     };
   },
+  created() {
+    // Definimos las preguntas de vida vinculándolas a sus opciones correspondientes
+    this.preguntasVida = [
+      {
+        key: "alcohol",
+        label: "Frecuencia de consumo de alcohol",
+        options: this.itemsAlcohol,
+      },
+      {
+        key: "ejercicio",
+        label: "Días de actividad física moderada",
+        options: [
+          { text: "0 días", value: 0 },
+          { text: "1 días", value: 1 },
+          { text: "2 días", value: 2 },
+          { text: "3 días", value: 3 },
+          { text: "4 días", value: 4 },
+          { text: "5 días", value: 5 },
+          { text: "6 días", value: 6 },
+          { text: "7 días", value: 7 },
+        ],
+      },
+      {
+        key: "fumador",
+        label: "¿Ha fumado al menos 100 cigarrillos?",
+        options: this.itemsCompletos,
+      },
+      {
+        key: "anhedonia",
+        label: "Presencia de Anhedonia",
+        options: this.ItemsAnhedonia,
+      },
+    ];
+  },
   methods: {
     siguiente() {
       if (this.paso < 4) this.paso++;
-      else this.$emit("finalizar");
+      else this.$emit("finalizar", this.form);
     },
     manejarAtras() {
       if (this.paso > 1) this.paso--;
       else this.$emit("atras");
     },
-    predecir() {
-      alert("Calculando...");
+    async predecir() {
+      console.log("Enviando a IA:", this.form);
+      alert("Consultando modelo de predicción...");
+    },
+    guardarCambios() {
+      this.bloqueoEdicion = false;
+      this.$emit("guardar", this.form);
     },
   },
 };
