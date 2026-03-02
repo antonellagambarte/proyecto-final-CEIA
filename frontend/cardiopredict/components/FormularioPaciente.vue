@@ -323,9 +323,9 @@ export default {
         ejercicio: this.datosIniciales.ejercicio || null,
         fumador: this.datosIniciales.fumador || null,
         anhedonia: this.datosIniciales.anhedonia || null,
-        ant_cardio: this.datosIniciales.ant_cardio || null,
-        ant_diabetes: this.datosIniciales.ant_diabetes || null,
-        ant_asma: this.datosIniciales.ant_asma || null,
+        fam_cardio: this.datosIniciales.fam_cardio || null,
+        fam_diabetes: this.datosIniciales.fam_diabetes || null,
+        fam_asma: this.datosIniciales.fam_asma || null,
         altura: this.datosIniciales.altura || null,
         peso: this.datosIniciales.peso || null,
         presion_sis: this.datosIniciales.presion_sis || null,
@@ -401,9 +401,9 @@ export default {
       // CONFIGURACIÓN DE PREGUNTAS DINÁMICAS (PASO 2)
       preguntasVida: [],
       antecedentesFamiliaresConfig: [
-        { key: "ant_cardio", label: "Enfermedad cardiovascular" },
-        { key: "ant_diabetes", label: "Diabetes" },
-        { key: "ant_asma", label: "Asma" },
+        { key: "fam_cardio", label: "Enfermedad cardiovascular" },
+        { key: "fam_diabetes", label: "Diabetes" },
+        { key: "fam_asma", label: "Asma" },
       ],
       evaluacionFisicaConfig: [
         { key: "altura", label: "Altura (m)" },
