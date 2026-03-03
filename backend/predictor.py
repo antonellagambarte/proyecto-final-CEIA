@@ -1,16 +1,25 @@
 import os
 import pandas as pd
+import numpy as np
 import joblib
 from catboost import CatBoostClassifier
 
-# --- SECCIÓN 1: Rutas ---
+# --- SECCIÓN 1: Rutas y Configuración ---
 BASE_DIR = os.path.dirname(__file__)
 PATH_E1 = os.path.join(BASE_DIR, "modelos", "modelo_catboost_etapa1.joblib")
 PATH_E2 = os.path.join(BASE_DIR, "modelos", "modelo_catboost_etapa2.joblib")
 PATH_ENCODERS = os.path.join(BASE_DIR, "encoders", "encoders_categoricos.joblib")
 PATH_SCALER = os.path.join(BASE_DIR, "scalers", "scaler_cardio.joblib")
 
-# --- SECCIÓN 2: Carga de modelos, encoders y scaler ---
+# Lista de variables que requieren log1p según entrenamiento
+VARS_LOGARITMICAS = [
+    'trigliceridos', 'colesterol_total', 'bmi', 'presion_sistolica_final', 
+    'presion_diastolica_final', 'glicohemoglobina', 'proteina_c',
+    'ancho_distribucion_globulos', 'hemoglobina', 'hdl', 'acido_urico',
+    'enzima_tgp', 'enzima_tgo', 'sodio', 'potasio'
+]
+
+# --- SECCIÓN 2: Carga de modelos ---
 modelo1 = CatBoostClassifier()
 modelo2 = CatBoostClassifier()
 encoders_dict = {}
@@ -21,21 +30,11 @@ try:
     modelo2.load_model(PATH_E2)
     encoders_dict = joblib.load(PATH_ENCODERS)
     scaler = joblib.load(PATH_SCALER)
-    print("Modelos, Encoders y Scaler cargados correctamente")
+    print("Pipeline de IA cargado: Modelos, Encoders y Scaler listos.")
 except Exception as e:
     print(f"Error crítico cargando archivos: {e}")
 
-# --- SECCIÓN 3: Listas de Variables ---
-
-# Variables numéricas originales
-VARS_NUMERICAS = [
-    'edad', 'colesterol_total', 'hdl', 'trigliceridos', 'proteina_c', 'bmi',
-    'glicohemoglobina', 'hemoglobina', 'ancho_distribucion_globulos', 'creatinina', 
-    'actividad_deportiva_moderada_x_semana', 'presion_sistolica_final', 
-    'presion_diastolica_final', 'acido_urico', 'enzima_tgp', 'enzima_tgo', 
-    'sodio', 'potasio', 'horas_suenio', 'fumador_actual'
-]
-
+# --- SECCIÓN 3: Columnas del Modelo ---
 COLUMNAS_MODELO_1 = [
     'edad', 'genero', 'fumo_100_cigarrillos', 'actividad_deportiva_moderada_x_semana',
     'consumo_alcohol_ultimo_año_1.0', 'consumo_alcohol_ultimo_año_2.0', 'consumo_alcohol_ultimo_año_3.0',
@@ -57,7 +56,16 @@ COLUMNAS_MODELO_2 = COLUMNAS_MODELO_1 + [
 def ejecutar_prediccion(datos_dict, etapa=1):
     df = pd.DataFrame([datos_dict])
     
-    # Aplicar Encoders (Categorías -> 0 y 1)
+    if 'peso' in df.columns and 'altura' in df.columns:
+        try:
+            df['bmi'] = df['peso'] / (df['altura'] ** 2)
+        except ZeroDivisionError:
+            df['bmi'] = 0
+
+    for col in VARS_LOGARITMICAS:
+        if col in df.columns:
+            df[col] = np.log1p(pd.to_numeric(df[col], errors='coerce').fillna(0))
+
     for col_nombre, encoder_obj in encoders_dict.items():
         if col_nombre in df.columns:
             try:
@@ -65,33 +73,28 @@ def ejecutar_prediccion(datos_dict, etapa=1):
                 df[nuevas_cols] = encoder_obj.transform(df[[col_nombre]])
                 df.drop(columns=[col_nombre], inplace=True)
             except Exception as e:
-                print(f"Aviso: No se pudo transformar {col_nombre}: {e}")
+                print(f"Aviso OHE: {col_nombre}: {e}")
 
     columnas_finales = COLUMNAS_MODELO_1 if etapa == 1 else COLUMNAS_MODELO_2
     df_ia = df.reindex(columns=columnas_finales).fillna(0)
 
-    # ESCALADO (Solo de las numéricas presentes)
-    cols_a_escalar = [c for c in VARS_NUMERICAS if c in df_ia.columns]
-    
-    if scaler and cols_a_escalar:
+    if scaler:
         try:
-            # Para que el scaler no de error de dimensiones, creamos un DF temporal 
-            df_temp_scaler = df_ia.reindex(columns=VARS_NUMERICAS).fillna(0)
-            valores_escalados = scaler.transform(df_temp_scaler)
+            VARS_SCALER = scaler.feature_names_in_
+            df_para_escalar = df.reindex(columns=VARS_SCALER).fillna(0)
             
-            # Devolvemos los valores escalados solo a las columnas que nos interesan
-            df_rescalado = pd.DataFrame(valores_escalados, columns=VARS_NUMERICAS)
-            for col in cols_a_escalar:
-                df_ia[col] = df_rescalado[col].values
+            valores_escalados = scaler.transform(df_para_escalar)
+            df_escalado_final = pd.DataFrame(valores_escalados, columns=VARS_SCALER)
+            
+            for col in df_ia.columns:
+                if col in VARS_SCALER:
+                    df_ia[col] = df_escalado_final[col].values
         except Exception as e:
             print(f"Error en escalado: {e}")
 
-    # Ejecutar Predicción
     try:
-        if etapa == 1:
-            probabilidad = modelo1.predict_proba(df_ia)[0][1]
-        else:
-            probabilidad = modelo2.predict_proba(df_ia)[0][1]
+        modelo = modelo1 if etapa == 1 else modelo2
+        probabilidad = modelo.predict_proba(df_ia)[0][1]
     except Exception as e:
         print(f"Error en predict_proba: {e}")
         return 0.0
