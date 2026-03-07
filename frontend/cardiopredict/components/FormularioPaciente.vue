@@ -254,7 +254,17 @@
     </v-sheet>
 
     <v-sheet color="transparent" width="100%" class="pa-10 flex-shrink-0">
-      <v-row no-gutters justify="end">
+      <v-row no-gutters justify="end" align="center">
+        <v-btn
+          v-if="paso === 2 || paso === 3"
+          text
+          color="grey lighten-1"
+          class="mr-4 custom-btn"
+          @click="guardarCambios"
+        >
+          <v-icon left small>fas fa-save</v-icon> GUARDAR PROGRESO
+        </v-btn>
+
         <template v-if="modoEdicion">
           <v-btn
             v-if="!bloqueoEdicion"
@@ -271,6 +281,7 @@
             >GUARDAR CAMBIOS</v-btn
           >
         </template>
+
         <v-btn
           v-if="paso >= 3"
           outlined
@@ -278,9 +289,10 @@
           class="mr-4 custom-btn"
           @click="predecir"
         >
-          <v-icon left small>fas fa-chart-line</v-icon>
-          PREDICCIÓN {{ paso === 3 ? "PRELIMINAR" : "FINAL" }}
+          <v-icon left small>fas fa-chart-line</v-icon> PREDICCIÓN
+          {{ paso === 3 ? "PRELIMINAR" : "FINAL" }}
         </v-btn>
+
         <v-btn
           color="#635b5b"
           class="white--text custom-btn px-10"
@@ -294,6 +306,7 @@
 </template>
 
 <script>
+import { pacienteService } from "~/services/pacienteService";
 import {
   OpcionesCompletas,
   OpcionesBinarias,
@@ -312,6 +325,7 @@ export default {
       paso: 1,
       bloqueoEdicion: !this.modoEdicion,
       form: {
+        id: this.datosIniciales.id || null, // Importante para actualizaciones
         apellido: this.datosIniciales.apellido || "",
         nombre: this.datosIniciales.nombre || "",
         genero: this.datosIniciales.genero || null,
@@ -339,7 +353,6 @@ export default {
         acido_urico: this.datosIniciales.acido_urico || null,
         potasio: this.datosIniciales.potasio || null,
       },
-      // LISTAS ESTÁNDAR PARA SELECTORES
       itemsBinarios: [
         { text: "Sí", value: OpcionesBinarias.SI },
         { text: "No", value: OpcionesBinarias.NO },
@@ -381,7 +394,7 @@ export default {
         },
         { text: "No sabe / No recuerda", value: OpcionesAlcohol.NO_SABE },
       ],
-      ItemsAnhedonia: [
+      itemsAnhedonia: [
         { text: "Para nada", value: OpcionesAnhedonia.NADA },
         { text: "Varios días", value: OpcionesAnhedonia.VARIOS_DIAS },
         {
@@ -397,8 +410,6 @@ export default {
         "Antecedentes familiares",
         "Resultados de laboratorio",
       ],
-
-      // CONFIGURACIÓN DE PREGUNTAS DINÁMICAS (PASO 2)
       preguntasVida: [],
       antecedentesFamiliaresConfig: [
         { key: "fam_cardio", label: "Enfermedad cardiovascular" },
@@ -439,7 +450,6 @@ export default {
     };
   },
   created() {
-    // Definimos las preguntas de vida vinculándolas a sus opciones correspondientes
     this.preguntasVida = [
       {
         key: "alcohol",
@@ -449,16 +459,10 @@ export default {
       {
         key: "ejercicio",
         label: "Días de actividad física moderada",
-        options: [
-          { text: "0 días", value: 0 },
-          { text: "1 días", value: 1 },
-          { text: "2 días", value: 2 },
-          { text: "3 días", value: 3 },
-          { text: "4 días", value: 4 },
-          { text: "5 días", value: 5 },
-          { text: "6 días", value: 6 },
-          { text: "7 días", value: 7 },
-        ],
+        options: Array.from({ length: 8 }, (_, i) => ({
+          text: `${i} días`,
+          value: i,
+        })),
       },
       {
         key: "fumador",
@@ -468,26 +472,96 @@ export default {
       {
         key: "anhedonia",
         label: "Presencia de Anhedonia",
-        options: this.ItemsAnhedonia,
+        options: this.itemsAnhedonia,
       },
     ];
   },
   methods: {
-    siguiente() {
-      if (this.paso < 4) this.paso++;
-      else this.$emit("finalizar", this.form);
+    async siguiente() {
+      if (this.paso < 4) {
+        if (this.paso === 3) await this.guardarCambios(true); // Guardado silencioso
+        this.paso++;
+      } else {
+        await this.guardarCambios();
+        this.$emit("finalizar", this.form);
+      }
     },
     manejarAtras() {
-      if (this.paso > 1) this.paso--;
-      else this.$emit("atras");
+      this.paso > 1 ? this.paso-- : this.$emit("atras");
     },
     async predecir() {
-      console.log("Enviando a IA:", this.form);
-      alert("Consultando modelo de predicción...");
+      console.log("Datos IA:", this.form);
+      alert("Consultando modelo...");
     },
-    guardarCambios() {
-      this.bloqueoEdicion = false;
-      this.$emit("guardar", this.form);
+    async guardarCambios(silencioso = false) {
+      try {
+        const mapaRespuestas = (valor) => {
+          if (valor === "S") return 1.0;
+          if (valor === "N") return 2.0;
+          if (valor === "X") return 9.0;
+          if (valor === "P") return 3.0;
+
+          return null;
+        };
+
+        const payload = {
+          id: this.form.id,
+          apellido: this.form.apellido,
+          nombre: this.form.nombre,
+          dni: this.form.dni,
+          genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
+          edad: this.form.edad ? parseInt(this.form.edad) : null,
+
+          fumo_100_cigarrillos: mapaRespuestas(this.form.fumador),
+          consumo_alcohol_ultimo_año: this.form.alcohol,
+          actividad_deportiva_moderada_x_semana: this.form.ejercicio,
+          anhedonia: this.form.anhedonia,
+          riñones_debiles_fallando: mapaRespuestas(this.form.renales),
+          diabetes: mapaRespuestas(this.form.diabetico),
+          hipertension: mapaRespuestas(this.form.hipertension),
+          fam_cardio: mapaRespuestas(this.form.fam_cardio),
+          fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
+          fam_asma: mapaRespuestas(this.form.fam_asma),
+
+          altura: this.form.altura ? parseFloat(this.form.altura) : null,
+          peso: this.form.peso ? parseFloat(this.form.peso) : null,
+          presion_sistolica_final: this.form.presion_sis
+            ? parseFloat(this.form.presion_sis)
+            : null,
+          presion_diastolica_final: this.form.presion_dis
+            ? parseFloat(this.form.presion_dis)
+            : null,
+
+          // Laboratorio
+          colesterol: this.form.colesterol
+            ? parseFloat(this.form.colesterol)
+            : null,
+          hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
+          trigliceridos: this.form.trigliceridos
+            ? parseFloat(this.form.trigliceridos)
+            : null,
+          creatinina: this.form.creatinina
+            ? parseFloat(this.form.creatinina)
+            : null,
+          pcr: this.form.pcr ? parseFloat(this.form.pcr) : null,
+          hemoglobina: this.form.hemoglobina
+            ? parseFloat(this.form.hemoglobina)
+            : null,
+          acido_urico: this.form.acido_urico
+            ? parseFloat(this.form.acido_urico)
+            : null,
+          potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
+        };
+
+        const res = await pacienteService.guardar(payload);
+
+        if (res.id) this.form.id = res.id;
+        if (!silencioso) alert("Datos sincronizados correctamente.");
+      } catch (e) {
+        console.error("Error al guardar:", e);
+        if (!silencioso)
+          alert("Error de validación. Revisa los datos ingresados.");
+      }
     },
   },
 };

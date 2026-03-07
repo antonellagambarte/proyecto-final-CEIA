@@ -19,6 +19,7 @@
         max-width="600"
         placeholder="Ej: 3015..."
         clearable
+        @keyup.enter="ejecutarBusqueda(filtroDni)"
       ></v-text-field>
 
       <div v-if="pacientesFiltrados.length > 0">
@@ -57,22 +58,41 @@
 </template>
 
 <script>
+import { pacienteService } from "@/services/pacienteService";
+
 export default {
   data() {
     return {
       filtroDni: "",
-      // Datos ficticios que luego vendrán de tu API
-      pacientes: [
-        { nombre: "Juan", apellido: "Pérez", dni: "30152486" },
-        { nombre: "Josefa", apellido: "Giménez", dni: "30158797" },
-        { nombre: "Carlos", apellido: "Sánchez", dni: "22456789" },
-      ],
+      pacientesLista: [],
+      buscando: false,
     };
+  },
+  watch: {
+    async filtroDni(nuevoDni) {
+      if (nuevoDni && nuevoDni.length >= 7) {
+        await this.ejecutarBusqueda(nuevoDni);
+      } else {
+        this.pacienteEncontrado = null;
+      }
+    },
   },
   computed: {
     pacientesFiltrados() {
-      if (!this.filtroDni) return [];
-      return this.pacientes.filter((p) => p.dni.includes(this.filtroDni));
+      return this.pacientesLista;
+    },
+  },
+  methods: {
+    async ejecutarBusqueda(dni) {
+      this.buscando = true;
+      try {
+        const resultado = await pacienteService.buscarPorDni(dni);
+        this.pacientesLista = resultado;
+      } catch (error) {
+        this.pacienteEncontrado = null;
+      } finally {
+        this.buscando = false;
+      }
     },
   },
 };
