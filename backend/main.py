@@ -82,9 +82,10 @@ def guardar_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get
         print(f"Error al guardar en SQLite: {e}")
         raise HTTPException(status_code=500, detail="No se pudo guardar en la base de datos")
 
-@app.get("/pacientes/{dni}", response_model=schemas.Paciente)
-def obtener_paciente(dni: str, db: Session = Depends(get_db)):
-    paciente = db.query(models.Paciente).filter(models.Paciente.dni == dni).first()
-    if not paciente:
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
-    return paciente
+@app.get("/pacientes/buscar/{dni_parcial}", response_model=list[schemas.Paciente])
+def buscar_pacientes_por_dni(dni_parcial: str, db: Session = Depends(get_db)):
+    # busca cualquier DNI que tenga esa cadena de números
+    pacientes = db.query(models.Paciente).filter(models.Paciente.dni.contains(dni_parcial)).all()
+    
+    # Si no encuentra ninguno, devolvemos lista vacía
+    return pacientes

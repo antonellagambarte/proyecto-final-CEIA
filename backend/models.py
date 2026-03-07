@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean
+from sqlalchemy import Column, Integer, String, Float
 from database import Base
 
 class Paciente(Base):
@@ -12,13 +12,14 @@ class Paciente(Base):
     nombre = Column(String)
     apellido = Column(String)
     
-    # Variables del Modelo de IA (Basado en tu lista)
     edad = Column(Float)
-    genero = Column(String) # Guardamos "Masculino" o "Femenino"
-    fumo_100_cigarrillos = Column(String) # Guardamos "Sí" o "No"
+    genero = Column(Float) 
+    fumo_100_cigarrillos = Column(Float) 
     consumo_alcohol_ultimo_año = Column(Float)
     actividad_deportiva_moderada_x_semana = Column(Float)
     anhedonia = Column(Float)
+    peso = Column(Float)
+    altura = Column(Float)
     bmi = Column(Float)
     presion_sistolica_final = Column(Float)
     presion_diastolica_final = Column(Float)

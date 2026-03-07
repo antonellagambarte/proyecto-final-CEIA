@@ -26,8 +26,8 @@ encoders_dict = {}
 scaler = None
 
 try:
-    modelo1.load_model(PATH_E1)
-    modelo2.load_model(PATH_E2)
+    modelo1 = joblib.load(PATH_E1)
+    modelo2 = joblib.load(PATH_E2)
     encoders_dict = joblib.load(PATH_ENCODERS)
     scaler = joblib.load(PATH_SCALER)
     print("Pipeline de IA cargado: Modelos, Encoders y Scaler listos.")
