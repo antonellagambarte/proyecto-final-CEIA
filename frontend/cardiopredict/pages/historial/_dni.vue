@@ -27,19 +27,33 @@
         Historial: {{ paciente.apellido }}, {{ paciente.nombre }}
       </h2>
 
-      <v-row class="grey--text text--caption mb-2 px-4">
-        <v-col cols="3">DNI</v-col>
-        <v-col cols="3">Estado de la ficha</v-col>
+      <v-row class="grey--text text--caption mb-2 px-4 font-weight-bold">
+        <v-col cols="2">Fecha Inicio</v-col>
+        <v-col cols="2">Última Modif.</v-col>
+        <v-col cols="2">Estado</v-col>
         <v-col cols="6"></v-col>
       </v-row>
       <v-divider class="grey darken-3 mb-4"></v-divider>
 
-      <v-row class="white--text align-center py-4 px-4 border-bottom">
-        <v-col cols="3">{{ paciente.dni }}</v-col>
-        <v-col cols="3">
-          <v-chip small :color="estadoRegistro.color" outlined>{{
-            estadoRegistro.texto
-          }}</v-chip>
+      <v-row
+        v-for="(item, i) in historial"
+        :key="i"
+        class="white--text align-center py-4 px-4 border-bottom"
+      >
+        <v-col cols="2" class="body-2">
+          {{ formatearFecha(item.fecha_creacion) }}
+        </v-col>
+        <v-col cols="2" class="grey--text caption">
+          {{
+            item.fecha_actualizacion
+              ? formatearFecha(item.fecha_actualizacion)
+              : "-"
+          }}
+        </v-col>
+        <v-col cols="2">
+          <v-chip small :color="obtenerEstado(item).color" outlined>
+            {{ obtenerEstado(item).texto }}
+          </v-chip>
         </v-col>
         <v-col cols="6" class="text-right">
           <v-btn
@@ -47,23 +61,25 @@
             color="#a39a9a"
             class="mr-4 custom-btn"
             small
-            @click="verPrediccion"
-            >VER PREDICCIÓN</v-btn
+            @click="verPrediccion(item)"
           >
+            VER PREDICCIÓN
+          </v-btn>
           <v-btn
             color="#635b5b"
             class="white--text custom-btn"
             small
-            @click="irADetalle"
-            >VER / COMPLETAR DATOS</v-btn
+            @click="irADetalle(item)"
           >
+            VER / COMPLETAR DATOS
+          </v-btn>
         </v-col>
       </v-row>
     </v-container>
 
     <FormularioPaciente
       v-else
-      :datosIniciales="paciente"
+      :datosIniciales="pacienteSeleccionado"
       :modoEdicion="true"
       @atras="verDetalleForm = false"
     />
@@ -80,29 +96,18 @@ export default {
     return {
       loading: true,
       verDetalleForm: false,
-      paciente: null,
+      paciente: { apellido: "", nombre: "" },
+      pacienteSeleccionado: null,
+      historial: [],
       dni: this.$route.params.dni,
     };
-  },
-  computed: {
-    estadoRegistro() {
-      if (!this.paciente) return { texto: "Desconocido", color: "grey" };
-      const tieneLaboratorio =
-        this.paciente.creatinina !== null && this.paciente.colesterol !== null;
-      return tieneLaboratorio
-        ? { texto: "COMPLETO", color: "success" }
-        : { texto: "PARCIAL", color: "warning" };
-    },
-  },
-  async mounted() {
-    await this.cargarPaciente();
   },
   methods: {
     async cargarPaciente() {
       this.loading = true;
       try {
         const res = await pacienteService.buscarPorDni(this.dni);
-        const data = Array.isArray(res) ? res[0] : res;
+        const dataArray = Array.isArray(res) ? res : [res];
 
         const inversoMapa = (v) => {
           if (v === 1.0) return "S";
@@ -112,7 +117,7 @@ export default {
           return null;
         };
 
-        this.paciente = {
+        this.historial = dataArray.map((data) => ({
           ...data,
           genero: data.genero === 0 ? "Masculino" : "Femenino",
           diabetico: inversoMapa(data.diabetes),
@@ -132,20 +137,61 @@ export default {
           presion_dis: data.presion_diastolica_final,
           colesterol: data.colesterol_total,
           pcr: data.proteina_c,
-        };
+          fecha_creacion: data.fecha_creacion,
+          fecha_actualizacion: data.fecha_actualizacion,
+        }));
+
+        if (this.historial.length > 0) {
+          this.historial.sort(
+            (a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
+          );
+          this.paciente = {
+            apellido: this.historial[0].apellido,
+            nombre: this.historial[0].nombre,
+          };
+        }
       } catch (error) {
         console.error("Error:", error);
       } finally {
         this.loading = false;
       }
     },
-    irADetalle() {
+    obtenerEstado(item) {
+      const completo = item.creatinina !== null && item.colesterol !== null;
+      return completo
+        ? { texto: "COMPLETO", color: "success" }
+        : { texto: "PARCIAL", color: "warning" };
+    },
+    formatearFecha(fecha) {
+      if (!fecha) return "-";
+      const d = new Date(fecha);
+      return d.toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    },
+    irADetalle(item) {
+      this.pacienteSeleccionado = item;
       this.verDetalleForm = true;
     },
-    verPrediccion() {
-      const riesgo = (this.paciente.probabilidad_riesgo * 100).toFixed(2);
+    verPrediccion(item) {
+      const riesgo = (item.probabilidad_riesgo * 100).toFixed(2);
       alert(`Riesgo Cardiovascular calculado: ${riesgo}%`);
     },
   },
+  async mounted() {
+    await this.cargarPaciente();
+  },
 };
 </script>
+
+<style scoped>
+.border-bottom {
+  border-bottom: 1px solid #333 !important;
+}
+.custom-btn {
+  font-size: 0.65rem !important;
+  letter-spacing: 0.5px;
+}
+</style>
