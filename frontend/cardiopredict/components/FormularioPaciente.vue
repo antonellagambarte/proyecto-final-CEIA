@@ -104,19 +104,21 @@
                 ></v-text-field>
               </v-col>
             </v-row>
+
             <v-divider class="grey darken-3 mb-6"></v-divider>
+
             <h3 class="white--text text-h5 mb-6 font-weight-light">
               Antecedentes médicos
             </h3>
             <v-row dense>
-              <v-col cols="12" md="5" class="mb-3">
+              <v-col cols="12" md="4" class="mb-3">
                 <p class="custom-label">¿Es diabético?</p>
                 <v-select
                   v-model="form.diabetico"
                   :items="itemsDiabetes"
                   item-text="text"
                   item-value="value"
-                  placeholder="Seleccione una opción"
+                  placeholder="Opción"
                   solo
                   background-color="#4a4444"
                   dark
@@ -125,14 +127,30 @@
                   :readonly="!bloqueoEdicion"
                 ></v-select>
               </v-col>
-              <v-col cols="12" md="5" offset-md="1" class="mb-3">
-                <p class="custom-label">¿Tiene problemas renales?</p>
+              <v-col cols="12" md="4" class="mb-3">
+                <p class="custom-label">¿Es hipertenso?</p>
+                <v-select
+                  v-model="form.hipertension"
+                  :items="itemsCompletos"
+                  item-text="text"
+                  item-value="value"
+                  placeholder="Opción"
+                  solo
+                  background-color="#4a4444"
+                  dark
+                  hide-details
+                  dense
+                  :readonly="!bloqueoEdicion"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" md="4" class="mb-3">
+                <p class="custom-label">¿Problemas renales?</p>
                 <v-select
                   v-model="form.renales"
                   :items="itemsCompletos"
                   item-text="text"
                   item-value="value"
-                  placeholder="Seleccione una opción"
+                  placeholder="Opción"
                   solo
                   background-color="#4a4444"
                   dark
@@ -324,35 +342,7 @@ export default {
     return {
       paso: 1,
       bloqueoEdicion: !this.modoEdicion,
-      form: {
-        id: this.datosIniciales.id || null, // Importante para actualizaciones
-        apellido: this.datosIniciales.apellido || "",
-        nombre: this.datosIniciales.nombre || "",
-        genero: this.datosIniciales.genero || null,
-        dni: this.datosIniciales.dni || "",
-        edad: this.datosIniciales.edad || null,
-        diabetico: this.datosIniciales.diabetico || null,
-        renales: this.datosIniciales.renales || null,
-        alcohol: this.datosIniciales.alcohol || null,
-        ejercicio: this.datosIniciales.ejercicio || null,
-        fumador: this.datosIniciales.fumador || null,
-        anhedonia: this.datosIniciales.anhedonia || null,
-        fam_cardio: this.datosIniciales.fam_cardio || null,
-        fam_diabetes: this.datosIniciales.fam_diabetes || null,
-        fam_asma: this.datosIniciales.fam_asma || null,
-        altura: this.datosIniciales.altura || null,
-        peso: this.datosIniciales.peso || null,
-        presion_sis: this.datosIniciales.presion_sis || null,
-        presion_dis: this.datosIniciales.presion_dis || null,
-        colesterol: this.datosIniciales.colesterol || null,
-        hdl: this.datosIniciales.hdl || null,
-        trigliceridos: this.datosIniciales.trigliceridos || null,
-        creatinina: this.datosIniciales.creatinina || null,
-        pcr: this.datosIniciales.pcr || null,
-        hemoglobina: this.datosIniciales.hemoglobina || null,
-        acido_urico: this.datosIniciales.acido_urico || null,
-        potasio: this.datosIniciales.potasio || null,
-      },
+      form: this.inicializarForm(),
       itemsBinarios: [
         { text: "Sí", value: OpcionesBinarias.SI },
         { text: "No", value: OpcionesBinarias.NO },
@@ -476,10 +466,21 @@ export default {
       },
     ];
   },
+  watch: {
+    datosIniciales: {
+      handler(newVal) {
+        if (newVal && Object.keys(newVal).length > 0) {
+          this.form = Object.assign({}, this.form, newVal);
+        }
+      },
+      immediate: true,
+      deep: true,
+    },
+  },
   methods: {
     async siguiente() {
       if (this.paso < 4) {
-        if (this.paso === 3) await this.guardarCambios(true); // Guardado silencioso
+        if (this.paso === 3) await this.guardarCambios(true);
         this.paso++;
       } else {
         await this.guardarCambios();
@@ -493,6 +494,40 @@ export default {
       console.log("Datos IA:", this.form);
       alert("Consultando modelo...");
     },
+
+    inicializarForm() {
+      return {
+        id: null,
+        apellido: "",
+        nombre: "",
+        genero: null,
+        dni: "",
+        edad: null,
+        diabetico: null,
+        hipertension: null,
+        renales: null,
+        alcohol: null,
+        ejercicio: null,
+        fumador: null,
+        anhedonia: null,
+        fam_cardio: null,
+        fam_diabetes: null,
+        fam_asma: null,
+        altura: null,
+        peso: null,
+        presion_sis: null,
+        presion_dis: null,
+        colesterol: null,
+        hdl: null,
+        trigliceridos: null,
+        creatinina: null,
+        pcr: null,
+        hemoglobina: null,
+        acido_urico: null,
+        potasio: null,
+      };
+    },
+
     async guardarCambios(silencioso = false) {
       try {
         const mapaRespuestas = (valor) => {
@@ -500,7 +535,6 @@ export default {
           if (valor === "N") return 2.0;
           if (valor === "X") return 9.0;
           if (valor === "P") return 3.0;
-
           return null;
         };
 
@@ -511,7 +545,6 @@ export default {
           dni: this.form.dni,
           genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
           edad: this.form.edad ? parseInt(this.form.edad) : null,
-
           fumo_100_cigarrillos: mapaRespuestas(this.form.fumador),
           consumo_alcohol_ultimo_año: this.form.alcohol,
           actividad_deportiva_moderada_x_semana: this.form.ejercicio,
@@ -522,7 +555,6 @@ export default {
           fam_cardio: mapaRespuestas(this.form.fam_cardio),
           fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
           fam_asma: mapaRespuestas(this.form.fam_asma),
-
           altura: this.form.altura ? parseFloat(this.form.altura) : null,
           peso: this.form.peso ? parseFloat(this.form.peso) : null,
           presion_sistolica_final: this.form.presion_sis
@@ -531,8 +563,6 @@ export default {
           presion_diastolica_final: this.form.presion_dis
             ? parseFloat(this.form.presion_dis)
             : null,
-
-          // Laboratorio
           colesterol: this.form.colesterol
             ? parseFloat(this.form.colesterol)
             : null,
@@ -554,7 +584,6 @@ export default {
         };
 
         const res = await pacienteService.guardar(payload);
-
         if (res.id) this.form.id = res.id;
         if (!silencioso) alert("Datos sincronizados correctamente.");
       } catch (e) {

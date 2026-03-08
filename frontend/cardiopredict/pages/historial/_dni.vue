@@ -1,14 +1,23 @@
 <template>
   <div>
     <v-container
-      v-if="!verDetalleForm"
+      v-if="loading"
+      fluid
+      class="pa-12 d-flex justify-center align-center"
+      style="background-color: #1a1a1a; min-height: 100vh"
+    >
+      <v-progress-circular indeterminate color="grey"></v-progress-circular>
+    </v-container>
+
+    <v-container
+      v-else-if="!verDetalleForm"
       fluid
       class="pa-12"
       style="background-color: #1a1a1a; min-height: 100vh"
     >
       <div
         class="d-flex align-center mb-6 cursor-pointer"
-        @click="$router.back()"
+        @click="$router.push('/buscar')"
       >
         <v-icon small color="grey">fas fa-arrow-left</v-icon>
         <span class="grey--text caption ml-2">Volver a búsqueda</span>
@@ -19,37 +28,34 @@
       </h2>
 
       <v-row class="grey--text text--caption mb-2 px-4">
-        <v-col cols="3">Fecha</v-col>
-        <v-col cols="3">Estado estudios</v-col>
+        <v-col cols="3">DNI</v-col>
+        <v-col cols="3">Estado de la ficha</v-col>
         <v-col cols="6"></v-col>
       </v-row>
       <v-divider class="grey darken-3 mb-4"></v-divider>
 
-      <v-row
-        v-for="(h, i) in historialFicticio"
-        :key="i"
-        class="white--text align-center py-4 px-4 border-bottom"
-      >
-        <v-col cols="3">{{ h.fecha }}</v-col>
+      <v-row class="white--text align-center py-4 px-4 border-bottom">
+        <v-col cols="3">{{ paciente.dni }}</v-col>
         <v-col cols="3">
-          <v-chip
-            small
-            :color="h.estado === 'Completo' ? 'success' : 'warning'"
-            outlined
-          >
-            {{ h.estado }}
-          </v-chip>
+          <v-chip small :color="estadoRegistro.color" outlined>{{
+            estadoRegistro.texto
+          }}</v-chip>
         </v-col>
         <v-col cols="6" class="text-right">
-          <v-btn outlined color="#a39a9a" class="mr-4 custom-btn" small
-            >VER PREDICCIONES</v-btn
+          <v-btn
+            outlined
+            color="#a39a9a"
+            class="mr-4 custom-btn"
+            small
+            @click="verPrediccion"
+            >VER PREDICCIÓN</v-btn
           >
           <v-btn
             color="#635b5b"
             class="white--text custom-btn"
             small
-            @click="irADetalle(h)"
-            >VER DATOS</v-btn
+            @click="irADetalle"
+            >VER / COMPLETAR DATOS</v-btn
           >
         </v-col>
       </v-row>
@@ -57,7 +63,7 @@
 
     <FormularioPaciente
       v-else
-      :datosIniciales="datosEstudioSeleccionado"
+      :datosIniciales="paciente"
       :modoEdicion="true"
       @atras="verDetalleForm = false"
     />
@@ -65,52 +71,81 @@
 </template>
 
 <script>
-// Importamos el componente (asegúrate de haberlo creado en components/FormularioPaciente.vue)
 import FormularioPaciente from "@/components/FormularioPaciente.vue";
+import { pacienteService } from "@/services/pacienteService";
 
 export default {
-  components: {
-    FormularioPaciente,
-  },
-  asyncData({ params }) {
-    const dni = params.dni;
-    return { dni };
-  },
+  components: { FormularioPaciente },
   data() {
     return {
-      verDetalleForm: false, // Switch para cambiar de vista
-      datosEstudioSeleccionado: null, // Aquí guardaremos los datos que verá el formulario
-      paciente: { nombre: "Juan", apellido: "Pérez", dni: "30152486" },
-      historialFicticio: [
-        { id: 1, fecha: "05/03/2025", estado: "Pendiente" },
-        { id: 2, fecha: "22/07/2025", estado: "Completo" },
-      ],
+      loading: true,
+      verDetalleForm: false,
+      paciente: null,
+      dni: this.$route.params.dni,
     };
   },
+  computed: {
+    estadoRegistro() {
+      if (!this.paciente) return { texto: "Desconocido", color: "grey" };
+      const tieneLaboratorio =
+        this.paciente.creatinina !== null && this.paciente.colesterol !== null;
+      return tieneLaboratorio
+        ? { texto: "COMPLETO", color: "success" }
+        : { texto: "PARCIAL", color: "warning" };
+    },
+  },
+  async mounted() {
+    await this.cargarPaciente();
+  },
   methods: {
-    irADetalle(estudio) {
-      // 1. Cargamos datos ficticios para ese estudio (esto vendrá de tu API después)
-      this.datosEstudioSeleccionado = {
-        apellido: this.paciente.apellido,
-        nombre: this.paciente.nombre,
-        dni: this.paciente.dni,
-        genero: "Masculino",
-        edad: estudio.id === 2 ? "52" : "51", // Ejemplo de datos variando
-        // ... aquí irían todos los campos (diabetes, presión, lab, etc)
-      };
+    async cargarPaciente() {
+      this.loading = true;
+      try {
+        const res = await pacienteService.buscarPorDni(this.dni);
+        const data = Array.isArray(res) ? res[0] : res;
 
-      // 2. Cambiamos la vista
+        const inversoMapa = (v) => {
+          if (v === 1.0) return "S";
+          if (v === 2.0) return "N";
+          if (v === 9.0) return "X";
+          if (v === 3.0) return "P";
+          return null;
+        };
+
+        this.paciente = {
+          ...data,
+          genero: data.genero === 0 ? "Masculino" : "Femenino",
+          diabetico: inversoMapa(data.diabetes),
+          hipertension: inversoMapa(data.hipertension),
+          renales: inversoMapa(data.riñones_debiles_fallando),
+
+          alcohol: data.consumo_alcohol_ultimo_año,
+          ejercicio: data.actividad_deportiva_moderada_x_semana,
+          fumador: inversoMapa(data.fumo_100_cigarrillos),
+          anhedonia: data.anhedonia,
+
+          fam_cardio: inversoMapa(data.fam_cardio),
+          fam_diabetes: inversoMapa(data.fam_diabetes),
+          fam_asma: inversoMapa(data.fam_asma),
+
+          presion_sis: data.presion_sistolica_final,
+          presion_dis: data.presion_diastolica_final,
+          colesterol: data.colesterol_total,
+          pcr: data.proteina_c,
+        };
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    irADetalle() {
       this.verDetalleForm = true;
+    },
+    verPrediccion() {
+      const riesgo = (this.paciente.probabilidad_riesgo * 100).toFixed(2);
+      alert(`Riesgo Cardiovascular calculado: ${riesgo}%`);
     },
   },
 };
 </script>
-
-<style scoped>
-.border-bottom {
-  border-bottom: 1px solid #333;
-}
-.custom-btn {
-  font-size: 0.7rem;
-}
-</style>
