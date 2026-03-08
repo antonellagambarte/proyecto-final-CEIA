@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy.sql import func
 from database import Base
 
 class Paciente(Base):
@@ -6,6 +7,10 @@ class Paciente(Base):
 
     # Identificación única en la base de datos
     id = Column(Integer, primary_key=True, index=True)
+    
+    # Fechas
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_actualizacion = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Datos de identificación del paciente
     dni = Column(String, unique=True, index=True)

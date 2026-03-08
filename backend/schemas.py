@@ -1,8 +1,11 @@
 from pydantic import BaseModel
+from datetime import datetime
 from typing import Optional
 
 class PacienteBase(BaseModel):
     dni: str
+    fecha_creacion: Optional[datetime] = None
+    fecha_actualizacion: Optional[datetime] = None
     nombre: str
     apellido: str
     edad: Optional[float] = None
