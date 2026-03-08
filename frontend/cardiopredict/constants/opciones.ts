@@ -1,5 +1,3 @@
-// types/paciente.ts
-
 export const Sexo = {
   MACULINO: "M",
   FEMENINO: "F",

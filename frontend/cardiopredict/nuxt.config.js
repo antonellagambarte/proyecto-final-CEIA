@@ -41,10 +41,10 @@ export default {
   vuetify: {
     customVariables: ["~/assets/variables.scss"],
     defaultAssets: {
-      icons: "fa", // Esto le dice a Vuetify que el prefijo por defecto es Font Awesome
+      icons: "fa",
     },
     icons: {
-      iconfont: "fa", // 'fa' para Font Awesome 5
+      iconfont: "fa",
     },
     theme: {
       dark: true,

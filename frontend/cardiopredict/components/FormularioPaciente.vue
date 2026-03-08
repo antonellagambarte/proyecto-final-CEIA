@@ -563,7 +563,7 @@ export default {
           presion_diastolica_final: this.form.presion_dis
             ? parseFloat(this.form.presion_dis)
             : null,
-          colesterol: this.form.colesterol
+          colesterol_total: this.form.colesterol
             ? parseFloat(this.form.colesterol)
             : null,
           hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
@@ -573,7 +573,7 @@ export default {
           creatinina: this.form.creatinina
             ? parseFloat(this.form.creatinina)
             : null,
-          pcr: this.form.pcr ? parseFloat(this.form.pcr) : null,
+          proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
           hemoglobina: this.form.hemoglobina
             ? parseFloat(this.form.hemoglobina)
             : null,
@@ -584,12 +584,30 @@ export default {
         };
 
         const res = await pacienteService.guardar(payload);
-        if (res.id) this.form.id = res.id;
-        if (!silencioso) alert("Datos sincronizados correctamente.");
+
+        if (res && res.id) {
+          this.form.id = res.id;
+
+          if (this.modoEdicion) {
+            this.bloqueoEdicion = false;
+          }
+
+          if (!silencioso) {
+            const riesgoMsg = res.probabilidad_riesgo
+              ? `\nRiesgo calculado: ${(res.probabilidad_riesgo * 100).toFixed(
+                  2
+                )}%`
+              : "";
+            alert("Datos sincronizados correctamente." + riesgoMsg);
+          }
+        }
       } catch (e) {
         console.error("Error al guardar:", e);
-        if (!silencioso)
-          alert("Error de validación. Revisa los datos ingresados.");
+        if (!silencioso) {
+          alert(
+            "Error de red o validación. Por favor, revisa los datos ingresados."
+          );
+        }
       }
     },
   },

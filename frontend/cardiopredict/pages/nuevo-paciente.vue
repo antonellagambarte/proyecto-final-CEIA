@@ -15,7 +15,6 @@ export default {
   },
   methods: {
     guardarNuevoPaciente() {
-      // Aquí irá tu lógica de POST a la API más adelante
       alert("Paciente creado con éxito");
       this.$router.push("/");
     },
