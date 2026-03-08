@@ -34,7 +34,7 @@ def get_db():
 def home():
     return {"message": "Backend CardioPredict activo con SQLite"}
 
-# RUTA PARA EL BOTÓN "PREDECIR" (Solo simulación)
+# RUTA PARA EL BOTÓN "PREDECIR" 
 @app.post("/pacientes/predecir")
 def predecir_al_vuelo(datos: dict):
     """
@@ -56,7 +56,7 @@ def predecir_al_vuelo(datos: dict):
         print(f"Error en simulación: {e}")
         raise HTTPException(status_code=500, detail="Error al procesar la predicción")
 
-# RUTA PARA EL BOTÓN "GUARDAR" (Persistencia definitiva)
+# RUTA PARA EL BOTÓN "GUARDAR" 
 @app.post("/pacientes/", response_model=schemas.Paciente)
 def guardar_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_db)):
     """
@@ -89,3 +89,31 @@ def buscar_pacientes_por_dni(dni_parcial: str, db: Session = Depends(get_db)):
     
     # Si no encuentra ninguno, devolvemos lista vacía
     return pacientes
+
+@app.put("/pacientes/{paciente_id}", response_model=schemas.Paciente)
+def actualizar_paciente(paciente_id: int, datos_actualizados: schemas.PacienteCreate, db: Session = Depends(get_db)):
+    """
+    Actualiza los datos de un paciente existente y recalcula el riesgo automáticamente.
+    """
+    paciente_db = db.query(models.Paciente).filter(models.Paciente.id == paciente_id).first()
+    if not paciente_db:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
+    datos_dict = datos_actualizados.model_dump()
+
+    etapa = 2 if datos_dict.get("creatinina") is not None else 1
+    nuevo_score_ia = predictor.ejecutar_prediccion(datos_dict, etapa=etapa)
+
+    for key, value in datos_dict.items():
+        setattr(paciente_db, key, value)
+    
+    paciente_db.probabilidad_riesgo = nuevo_score_ia
+
+    try:
+        db.commit()
+        db.refresh(paciente_db)
+        return paciente_db
+    except Exception as e:
+        db.rollback()
+        print(f"Error al actualizar: {e}")
+        raise HTTPException(status_code=500, detail="Error al actualizar los datos en la base de datos")
