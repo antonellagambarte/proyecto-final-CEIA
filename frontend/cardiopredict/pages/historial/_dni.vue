@@ -17,7 +17,7 @@
     >
       <div
         class="d-flex align-center mb-6 cursor-pointer"
-        @click="$router.push('/buscar')"
+        @click="$router.back()"
       >
         <v-icon small color="grey">fas fa-arrow-left</v-icon>
         <span class="grey--text caption ml-2">Volver a búsqueda</span>
