@@ -8,6 +8,32 @@
       overflow: hidden;
     "
   >
+    <v-dialog v-model="modalExito" max-width="400" persistent>
+      <v-card color="#2a2a2a" class="pa-4 text-center border-grey">
+        <v-icon color="success" size="64" class="mb-4"
+          >fas fa-check-circle</v-icon
+        >
+        <v-card-title class="white--text justify-center text-h5">
+          ¡Guardado con éxito!
+        </v-card-title>
+        <v-card-text class="grey--text text--lighten-1">
+          Los datos han sido sincronizados correctamente.
+          <div v-if="mensajeRiesgo" class="mt-4 success--text font-weight-bold">
+            {{ mensajeRiesgo }}
+          </div>
+        </v-card-text>
+        <v-card-actions class="justify-center">
+          <v-btn
+            color="success"
+            class="px-10 custom-btn"
+            @click="modalExito = false"
+          >
+            ACEPTAR
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-sheet color="transparent" width="100%" class="pa-6 pb-0 flex-shrink-0">
       <div
         class="d-flex align-center cursor-pointer"
@@ -128,6 +154,7 @@
                   hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
@@ -144,6 +171,7 @@
                   hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
@@ -160,6 +188,7 @@
                   hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
@@ -181,6 +210,7 @@
                   hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
@@ -208,6 +238,7 @@
                   hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
@@ -232,6 +263,7 @@
                   hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   :rules="[(v) => !!v || 'Requerido']"
                 ></v-text-field>
               </v-col>
@@ -261,6 +293,7 @@
                     hide-details
                     dense
                     :readonly="!bloqueoEdicion"
+                    :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -343,6 +376,8 @@ export default {
   },
   data() {
     return {
+      modalExito: false,
+      mensajeRiesgo: "",
       paso: 1,
       formValido: false,
       bloqueoEdicion: !this.modoEdicion,
@@ -470,14 +505,21 @@ export default {
       },
     ];
   },
+  watch: {
+    datosIniciales: {
+      handler(newVal) {
+        if (newVal && Object.keys(newVal).length > 0) {
+          this.form = Object.assign({}, this.form, newVal);
+        }
+      },
+      immediate: true,
+      deep: true,
+    },
+  },
   methods: {
     async siguiente() {
       const esValido = this.$refs.form.validate();
-
-      if (!esValido && this.paso < 4) {
-        return;
-      }
-
+      if (!esValido && this.paso < 4) return;
       if (this.paso < 4) {
         this.paso++;
       } else {
@@ -485,14 +527,12 @@ export default {
         this.$emit("finalizar", this.form);
       }
     },
-
     manejarAtras() {
       this.paso > 1 ? this.paso-- : this.$emit("atras");
     },
     async predecir() {
       alert("Consultando modelo...");
     },
-
     inicializarForm() {
       return {
         id: null,
@@ -525,13 +565,8 @@ export default {
         potasio: null,
       };
     },
-
     async guardarCambios(silencioso = false) {
-      if (!silencioso && !this.$refs.form.validate()) {
-        alert("No se pueden guardar los datos: faltan campos obligatorios.");
-        return;
-      }
-
+      if (!silencioso && !this.$refs.form.validate()) return;
       try {
         const mapaRespuestas = (valor) => {
           if (valor === "S") return 1.0;
@@ -540,7 +575,6 @@ export default {
           if (valor === "P") return 3.0;
           return null;
         };
-
         const payload = {
           id: this.form.id,
           apellido: this.form.apellido,
@@ -590,11 +624,17 @@ export default {
         if (res && res.id) {
           this.form.id = res.id;
           if (this.modoEdicion) this.bloqueoEdicion = false;
-          if (!silencioso) alert("Datos guardados con éxito.");
+          if (!silencioso) {
+            this.mensajeRiesgo = res.probabilidad_riesgo
+              ? `Riesgo calculado: ${(res.probabilidad_riesgo * 100).toFixed(
+                  2
+                )}%`
+              : "";
+            this.modalExito = true;
+          }
         }
       } catch (e) {
         console.error(e);
-        if (!silencioso) alert("Error al guardar.");
       }
     },
   },
@@ -608,19 +648,32 @@ export default {
   font-weight: 300;
   margin-bottom: 4px;
 }
+
 .v-text-field--solo >>> .v-input__control,
 .v-select >>> .v-input__control {
   min-height: 40px !important;
   border-radius: 4px;
 }
+
 .custom-btn {
   height: 42px !important;
   font-size: 0.75rem;
   font-weight: bold;
 }
+
+.border-grey {
+  border: 1px solid #4a4a4a !important;
+}
+
 .input-bloqueado {
-  opacity: 0.5;
+  opacity: 0.5 !important;
+  pointer-events: none;
   filter: grayscale(1);
   transition: all 0.3s ease;
+}
+
+.input-bloqueado >>> .v-select__selection,
+.input-bloqueado >>> .v-icon {
+  color: rgba(255, 255, 255, 0.5) !important;
 }
 </style>
