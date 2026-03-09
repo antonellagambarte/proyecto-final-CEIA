@@ -56,6 +56,11 @@ COLUMNAS_MODELO_2 = COLUMNAS_MODELO_1 + [
 def ejecutar_prediccion(datos_dict, etapa=1):
     df = pd.DataFrame([datos_dict])
     
+    modelo = modelo1 if etapa == 1 else modelo2
+    if modelo is None:
+        print("Error: Modelo no cargado.")
+        return 0.0
+
     if 'peso' in df.columns and 'altura' in df.columns:
         try:
             df['bmi'] = df['peso'] / (df['altura'] ** 2)
@@ -71,13 +76,12 @@ def ejecutar_prediccion(datos_dict, etapa=1):
             try:
                 nuevas_cols = encoder_obj.get_feature_names_out([col_nombre])
                 df[nuevas_cols] = encoder_obj.transform(df[[col_nombre]])
-                df.drop(columns=[col_nombre], inplace=True)
             except Exception as e:
                 print(f"Aviso OHE: {col_nombre}: {e}")
 
-    columnas_finales = COLUMNAS_MODELO_1 if etapa == 1 else COLUMNAS_MODELO_2
-    df_ia = df.reindex(columns=columnas_finales).fillna(0)
-
+    columnas_entrenamiento = modelo.feature_names_
+    df_ia = df.reindex(columns=columnas_entrenamiento).fillna(0)
+    
     if scaler:
         try:
             VARS_SCALER = scaler.feature_names_in_
@@ -93,7 +97,7 @@ def ejecutar_prediccion(datos_dict, etapa=1):
             print(f"Error en escalado: {e}")
 
     try:
-        modelo = modelo1 if etapa == 1 else modelo2
+        df_ia = df_ia.reindex(columns=columnas_entrenamiento).fillna(0)
         probabilidad = modelo.predict_proba(df_ia)[0][1]
     except Exception as e:
         print(f"Error en predict_proba: {e}")
