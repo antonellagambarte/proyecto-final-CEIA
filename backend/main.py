@@ -41,7 +41,7 @@ def predecir_al_vuelo(datos: dict):
         
         return {
             "probabilidad": probabilidad,
-            "riesgo": "Alto" if probabilidad > 0.5 else "Bajo",
+            "riesgo": "Alto" if probabilidad > 0.4 else "Bajo", 
             "etapa_aplicada": etapa_a_usar
         }
     except Exception as e:
@@ -105,3 +105,17 @@ def actualizar_paciente(paciente_id: int, datos_actualizados: schemas.PacienteCr
         db.rollback()
         print(f"Error al actualizar: {e}")
         raise HTTPException(status_code=500, detail="Error al actualizar")
+    
+    
+@app.get("/pacientes/", response_model=list[schemas.Paciente])
+def obtener_pacientes(top: int = None, db: Session = Depends(get_db)):
+    """
+    Trae la lista de pacientes. 
+    Uso: /pacientes/ (trae todos) o /pacientes/?top=10 (trae los primeros 10)
+    """
+    query = db.query(models.Paciente).order_by(models.Paciente.id.desc())
+    
+    if top:
+        return query.limit(top).all()
+    
+    return query.all()
