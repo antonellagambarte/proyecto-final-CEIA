@@ -10,24 +10,56 @@
   >
     <v-dialog v-model="modalExito" max-width="400" persistent>
       <v-card color="#2a2a2a" class="pa-4 text-center border-grey">
-        <v-icon color="success" size="64" class="mb-4"
-          >fas fa-check-circle</v-icon
+        <v-icon
+          :color="
+            resultadoIA
+              ? resultadoIA.probabilidad > 0.4
+                ? 'error'
+                : 'success'
+              : 'success'
+          "
+          size="64"
+          class="mb-4"
         >
+          {{ resultadoIA ? "fas fa-chart-line" : "fas fa-check-circle" }}
+        </v-icon>
+
         <v-card-title class="white--text justify-center text-h5">
-          ¡Guardado con éxito!
+          {{ resultadoIA ? "Resultado de Riesgo" : "¡Guardado con éxito!" }}
         </v-card-title>
+
         <v-card-text class="grey--text text--lighten-1">
-          Los datos han sido sincronizados correctamente.
-          <div v-if="mensajeRiesgo" class="mt-4 success--text font-weight-bold">
-            {{ mensajeRiesgo }}
+          <div
+            v-if="resultadoIA"
+            class="mt-2 pa-4 rounded-lg"
+            :class="
+              resultadoIA.probabilidad > 0.4 ? 'red darken-4' : 'green darken-4'
+            "
+          >
+            <div class="white--text text-overline mb-1">
+              Probabilidad Calculada
+            </div>
+            <div class="white--text text-h4 font-weight-black">
+              {{ (resultadoIA.probabilidad * 100).toFixed(2) }}%
+            </div>
+            <div class="white--text text-subtitle-1 font-weight-bold mt-1">
+              RIESGO {{ resultadoIA.probabilidad > 0.4 ? "ALTO" : "BAJO" }}
+            </div>
+          </div>
+
+          <div v-else>
+            Los datos han sido sincronizados correctamente.
+            <div
+              v-if="mensajeRiesgo"
+              class="mt-4 success--text font-weight-bold"
+            >
+              {{ mensajeRiesgo }}
+            </div>
           </div>
         </v-card-text>
+
         <v-card-actions class="justify-center">
-          <v-btn
-            color="success"
-            class="px-10 custom-btn"
-            @click="modalExito = false"
-          >
+          <v-btn color="success" class="px-10 custom-btn" @click="cerrarModal">
             ACEPTAR
           </v-btn>
         </v-card-actions>
@@ -378,6 +410,7 @@ export default {
     return {
       modalExito: false,
       mensajeRiesgo: "",
+      resultadoIA: null,
       paso: 1,
       formValido: false,
       bloqueoEdicion: !this.modoEdicion,
@@ -527,12 +560,78 @@ export default {
         this.$emit("finalizar", this.form);
       }
     },
+
     manejarAtras() {
       this.paso > 1 ? this.paso-- : this.$emit("atras");
     },
-    async predecir() {
-      alert("Consultando modelo...");
+
+    cerrarModal() {
+      this.modalExito = false;
+      this.resultadoIA = null;
     },
+
+    async predecir() {
+      try {
+        this.resultadoIA = null;
+        const mapaRespuestas = (valor) => {
+          if (valor === "S") return 1.0;
+          if (valor === "N") return 2.0;
+          if (valor === "X") return 9.0;
+          if (valor === "P") return 3.0;
+          return null;
+        };
+
+        const payload = {
+          genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
+          edad: this.form.edad ? parseInt(this.form.edad) : null,
+          fumo_100_cigarrillos: mapaRespuestas(this.form.fumador),
+          consumo_alcohol_ultimo_año: this.form.alcohol,
+          actividad_deportiva_moderada_x_semana: this.form.ejercicio,
+          anhedonia: this.form.anhedonia,
+          riñones_debiles_fallando: mapaRespuestas(this.form.renales),
+          diabetes: mapaRespuestas(this.form.diabetico),
+          hipertension: mapaRespuestas(this.form.hipertension),
+          fam_cardio: mapaRespuestas(this.form.fam_cardio),
+          fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
+          fam_asma: mapaRespuestas(this.form.fam_asma),
+          altura: this.form.altura ? parseFloat(this.form.altura) : null,
+          peso: this.form.peso ? parseFloat(this.form.peso) : null,
+          presion_sistolica_final: this.form.presion_sis
+            ? parseFloat(this.form.presion_sis)
+            : null,
+          presion_diastolica_final: this.form.presion_dis
+            ? parseFloat(this.form.presion_dis)
+            : null,
+          creatinina: this.form.creatinina
+            ? parseFloat(this.form.creatinina)
+            : null,
+          colesterol_total: this.form.colesterol
+            ? parseFloat(this.form.colesterol)
+            : null,
+          hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
+          trigliceridos: this.form.trigliceridos
+            ? parseFloat(this.form.trigliceridos)
+            : null,
+          proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
+          hemoglobina: this.form.hemoglobina
+            ? parseFloat(this.form.hemoglobina)
+            : null,
+          acido_urico: this.form.acido_urico
+            ? parseFloat(this.form.acido_urico)
+            : null,
+          potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
+        };
+
+        const res = await pacienteService.predecirAlVuelo(payload);
+        this.resultadoIA = res;
+        this.modalExito = true;
+      } catch (e) {
+        alert(
+          "No se pudo realizar la predicción. Revisa los datos ingresados."
+        );
+      }
+    },
+
     inicializarForm() {
       return {
         id: null,
@@ -565,6 +664,7 @@ export default {
         potasio: null,
       };
     },
+
     async guardarCambios(silencioso = false) {
       if (!silencioso && !this.$refs.form.validate()) return;
       try {
@@ -625,6 +725,7 @@ export default {
           this.form.id = res.id;
           if (this.modoEdicion) this.bloqueoEdicion = false;
           if (!silencioso) {
+            this.resultadoIA = null;
             this.mensajeRiesgo = res.probabilidad_riesgo
               ? `Riesgo calculado: ${(res.probabilidad_riesgo * 100).toFixed(
                   2

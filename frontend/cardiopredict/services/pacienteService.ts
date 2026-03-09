@@ -38,4 +38,19 @@ export const pacienteService = {
 
     return await response.json();
   },
+
+  async predecirAlVuelo(payload) {
+    try {
+      const response = await fetch(`${API_URL}/pacientes/predecir`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error("Error en la predicción");
+      return await response.json();
+    } catch (error) {
+      console.error("Error al predecir:", error);
+      throw error;
+    }
+  },
 };
