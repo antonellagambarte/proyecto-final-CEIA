@@ -53,4 +53,18 @@ export const pacienteService = {
       throw error;
     }
   },
+
+  async obtenerTodos(top = null) {
+    try {
+      const url = top
+        ? `${API_URL}/pacientes/?top=${top}`
+        : `${API_URL}/pacientes/`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Error al obtener pacientes");
+      return await response.json();
+    } catch (error) {
+      console.error("Error obteniendo pacientes:", error);
+      return [];
+    }
+  },
 };

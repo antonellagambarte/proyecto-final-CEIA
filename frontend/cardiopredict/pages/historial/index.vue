@@ -8,7 +8,9 @@
       <h2 class="white--text text-h4 mb-4 font-weight-light">
         Realizar búsqueda
       </h2>
-      <p class="grey--text text--lighten-1 mb-2">Ingrese el DNI del paciente</p>
+      <p class="grey--text text--lighten-1 mb-2">
+        {{ filtroDni ? "Resultados de búsqueda" : "Pacientes recientes" }}
+      </p>
 
       <v-text-field
         v-model="filtroDni"
@@ -16,7 +18,7 @@
         background-color="#4a4444"
         dark
         class="mb-6"
-        placeholder="Ej: 3015..."
+        placeholder="Ingrese DNI para buscar..."
         clearable
         :rules="dniRules"
         @input="validarYBuscar"
@@ -64,9 +66,9 @@
         v-else-if="
           filtroDni && filtroDni.length >= 3 && !buscando && soloNumerosValido
         "
-        class="grey--text mt-4"
+        class="grey--text mt-4 text-center"
       >
-        No se encontraron pacientes con ese DNI.
+        No se encontraron pacientes con el DNI: <strong>{{ filtroDni }}</strong>
       </div>
     </v-sheet>
   </v-container>
@@ -92,26 +94,31 @@ export default {
       return /^\d+$/.test(this.filtroDni);
     },
   },
+
+  mounted() {
+    this.cargarPacientesRecientes();
+  },
+
   methods: {
+    async cargarPacientesRecientes() {
+      this.buscando = true;
+      try {
+        this.pacientesLista = await pacienteService.obtenerTodos(10);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.buscando = false;
+      }
+    },
+
     validarYBuscar() {
       if (!this.filtroDni) {
-        this.filtroDni = "";
-        this.pacientesLista = [];
-        this.buscando = false;
+        this.cargarPacientesRecientes();
         if (this.timeout) clearTimeout(this.timeout);
         return;
       }
 
-      if (!this.soloNumerosValido) {
-        this.pacientesLista = [];
-        this.buscando = false;
-        if (this.timeout) clearTimeout(this.timeout);
-        return;
-      }
-
-      if (this.filtroDni.length < 3) {
-        this.pacientesLista = [];
-        this.buscando = false;
+      if (!this.soloNumerosValido || this.filtroDni.length < 3) {
         if (this.timeout) clearTimeout(this.timeout);
         return;
       }
