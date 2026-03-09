@@ -675,6 +675,7 @@ export default {
           if (valor === "P") return 3.0;
           return null;
         };
+
         const payload = {
           id: this.form.id,
           apellido: this.form.apellido,
@@ -721,21 +722,19 @@ export default {
         };
 
         const res = await pacienteService.guardar(payload);
+
         if (res && res.id) {
           this.form.id = res.id;
           if (this.modoEdicion) this.bloqueoEdicion = false;
+
           if (!silencioso) {
             this.resultadoIA = null;
-            this.mensajeRiesgo = res.probabilidad_riesgo
-              ? `Riesgo calculado: ${(res.probabilidad_riesgo * 100).toFixed(
-                  2
-                )}%`
-              : "";
+            this.mensajeRiesgo = "";
             this.modalExito = true;
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error("Error al guardar:", e);
       }
     },
   },
