@@ -32,88 +32,87 @@
           {{ titulos[paso - 1] }}
         </h2>
 
-        <v-form ref="form">
+        <v-form ref="form" v-model="formValido">
           <div v-if="paso === 1">
             <v-row dense class="mb-4">
               <v-col cols="12" md="5">
-                <p class="custom-label">Apellido</p>
+                <p class="custom-label">Apellido *</p>
                 <v-text-field
                   v-model="form.apellido"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
-                  placeholder="Ingrese apellido"
                   :readonly="!bloqueoEdicion"
                   :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => !!v || 'Requerido']"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="5" offset-md="1">
-                <p class="custom-label">Nombre</p>
+                <p class="custom-label">Nombre *</p>
                 <v-text-field
                   v-model="form.nombre"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
-                  placeholder="Ingrese nombre"
                   :readonly="!bloqueoEdicion"
                   :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => !!v || 'Requerido']"
                 ></v-text-field>
               </v-col>
             </v-row>
             <v-row dense class="mb-6">
               <v-col cols="12" md="4">
-                <p class="custom-label">Género</p>
+                <p class="custom-label">Género *</p>
                 <v-select
                   v-model="form.genero"
                   :items="['Masculino', 'Femenino']"
-                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
                   :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => !!v || 'Requerido']"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="3" offset-md="1">
-                <p class="custom-label">DNI</p>
+                <p class="custom-label">DNI *</p>
                 <v-text-field
                   v-model="form.dni"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
-                  placeholder="Ej: 40123456"
                   :readonly="!bloqueoEdicion"
                   :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => !!v || 'Requerido']"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="2" offset-md="1">
-                <p class="custom-label">Edad</p>
+                <p class="custom-label">Edad *</p>
                 <v-text-field
                   v-model="form.edad"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
-                  placeholder="0"
                   :readonly="!bloqueoEdicion"
                   :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => !!v || 'Requerido']"
                 ></v-text-field>
               </v-col>
             </v-row>
 
             <v-divider class="grey darken-3 mb-6"></v-divider>
-
             <h3 class="white--text text-h5 mb-6 font-weight-light">
-              Antecedentes médicos
+              Antecedentes médicos *
             </h3>
             <v-row dense>
               <v-col cols="12" md="4" class="mb-3">
@@ -123,14 +122,13 @@
                   :items="itemsDiabetes"
                   item-text="text"
                   item-value="value"
-                  placeholder="Opción"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="4" class="mb-3">
@@ -140,14 +138,13 @@
                   :items="itemsCompletos"
                   item-text="text"
                   item-value="value"
-                  placeholder="Opción"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="4" class="mb-3">
@@ -157,14 +154,13 @@
                   :items="itemsCompletos"
                   item-text="text"
                   item-value="value"
-                  placeholder="Opción"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
             </v-row>
@@ -173,20 +169,19 @@
           <div v-if="paso === 2">
             <v-row v-for="(q, i) in preguntasVida" :key="i" dense class="mb-5">
               <v-col cols="12" md="10">
-                <p class="custom-label">{{ q.label }}</p>
+                <p class="custom-label">{{ q.label }} *</p>
                 <v-select
                   v-model="form[q.key]"
                   :items="q.options"
                   item-text="text"
                   item-value="value"
-                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
             </v-row>
@@ -201,26 +196,25 @@
                 :key="ant.key"
                 class="mb-4"
               >
-                <p class="custom-label">{{ ant.label }}</p>
+                <p class="custom-label">{{ ant.label }} *</p>
                 <v-select
                   v-model="form[ant.key]"
                   :items="itemsCompletos"
                   item-text="text"
                   item-value="value"
-                  placeholder="Seleccione una opción"
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
                   :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
             </v-row>
             <v-divider class="grey darken-3 mb-6"></v-divider>
             <h3 class="white--text text-h5 mb-4 font-weight-light">
-              Evaluación física
+              Evaluación física *
             </h3>
             <v-row dense>
               <v-col
@@ -235,11 +229,10 @@
                   solo
                   background-color="#4a4444"
                   dark
-                  hide-details
+                  hide-details="auto"
                   dense
-                  placeholder="0.00"
                   :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => !!v || 'Requerido']"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -267,9 +260,7 @@
                     dark
                     hide-details
                     dense
-                    placeholder="Valor"
                     :readonly="!bloqueoEdicion"
-                    :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -286,13 +277,13 @@
     <v-sheet color="transparent" width="100%" class="pa-10 flex-shrink-0">
       <v-row no-gutters justify="end" align="center">
         <v-btn
-          v-if="paso === 2 || paso === 3"
+          v-if="paso >= 3"
           text
-          color="grey lighten-1"
+          color="success"
           class="mr-4 custom-btn"
-          @click="guardarCambios"
+          @click="guardarCambios(false)"
         >
-          <v-icon left small>fas fa-save</v-icon> GUARDAR PROGRESO
+          <v-icon left small>fas fa-save</v-icon> GUARDAR DATOS
         </v-btn>
 
         <template v-if="modoEdicion">
@@ -307,8 +298,8 @@
             v-else
             color="success"
             class="white--text mr-4 custom-btn"
-            @click="guardarCambios"
-            >GUARDAR CAMBIOS</v-btn
+            @click="guardarCambios(false)"
+            >CONFIRMAR EDICIÓN</v-btn
           >
         </template>
 
@@ -353,6 +344,7 @@ export default {
   data() {
     return {
       paso: 1,
+      formValido: false,
       bloqueoEdicion: !this.modoEdicion,
       form: this.inicializarForm(),
       itemsBinarios: [
@@ -478,32 +470,26 @@ export default {
       },
     ];
   },
-  watch: {
-    datosIniciales: {
-      handler(newVal) {
-        if (newVal && Object.keys(newVal).length > 0) {
-          this.form = Object.assign({}, this.form, newVal);
-        }
-      },
-      immediate: true,
-      deep: true,
-    },
-  },
   methods: {
     async siguiente() {
+      const esValido = this.$refs.form.validate();
+
+      if (!esValido && this.paso < 4) {
+        return;
+      }
+
       if (this.paso < 4) {
-        if (this.paso === 3) await this.guardarCambios(true);
         this.paso++;
       } else {
         await this.guardarCambios();
         this.$emit("finalizar", this.form);
       }
     },
+
     manejarAtras() {
       this.paso > 1 ? this.paso-- : this.$emit("atras");
     },
     async predecir() {
-      console.log("Datos IA:", this.form);
       alert("Consultando modelo...");
     },
 
@@ -541,6 +527,11 @@ export default {
     },
 
     async guardarCambios(silencioso = false) {
+      if (!silencioso && !this.$refs.form.validate()) {
+        alert("No se pueden guardar los datos: faltan campos obligatorios.");
+        return;
+      }
+
       try {
         const mapaRespuestas = (valor) => {
           if (valor === "S") return 1.0;
@@ -596,30 +587,14 @@ export default {
         };
 
         const res = await pacienteService.guardar(payload);
-
         if (res && res.id) {
           this.form.id = res.id;
-
-          if (this.modoEdicion) {
-            this.bloqueoEdicion = false;
-          }
-
-          if (!silencioso) {
-            const riesgoMsg = res.probabilidad_riesgo
-              ? `\nRiesgo calculado: ${(res.probabilidad_riesgo * 100).toFixed(
-                  2
-                )}%`
-              : "";
-            alert("Datos sincronizados correctamente." + riesgoMsg);
-          }
+          if (this.modoEdicion) this.bloqueoEdicion = false;
+          if (!silencioso) alert("Datos guardados con éxito.");
         }
       } catch (e) {
-        console.error("Error al guardar:", e);
-        if (!silencioso) {
-          alert(
-            "Error de red o validación. Por favor, revisa los datos ingresados."
-          );
-        }
+        console.error(e);
+        if (!silencioso) alert("Error al guardar.");
       }
     },
   },
@@ -643,8 +618,6 @@ export default {
   font-size: 0.75rem;
   font-weight: bold;
 }
-
-/* Efecto visual de bloqueo */
 .input-bloqueado {
   opacity: 0.5;
   filter: grayscale(1);
