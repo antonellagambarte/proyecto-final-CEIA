@@ -46,6 +46,7 @@
                   dense
                   placeholder="Ingrese apellido"
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="5" offset-md="1">
@@ -59,6 +60,7 @@
                   dense
                   placeholder="Ingrese nombre"
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -75,6 +77,7 @@
                   hide-details
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="3" offset-md="1">
@@ -88,6 +91,7 @@
                   dense
                   placeholder="Ej: 40123456"
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="2" offset-md="1">
@@ -101,6 +105,7 @@
                   dense
                   placeholder="0"
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -125,6 +130,7 @@
                   hide-details
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="4" class="mb-3">
@@ -141,6 +147,7 @@
                   hide-details
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="4" class="mb-3">
@@ -157,6 +164,7 @@
                   hide-details
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-select>
               </v-col>
             </v-row>
@@ -178,6 +186,7 @@
                   hide-details
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-select>
               </v-col>
             </v-row>
@@ -205,6 +214,7 @@
                   hide-details
                   dense
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-select>
               </v-col>
             </v-row>
@@ -229,6 +239,7 @@
                   dense
                   placeholder="0.00"
                   :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -258,6 +269,7 @@
                     dense
                     placeholder="Valor"
                     :readonly="!bloqueoEdicion"
+                    :class="{ 'input-bloqueado': !bloqueoEdicion }"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -630,5 +642,12 @@ export default {
   height: 42px !important;
   font-size: 0.75rem;
   font-weight: bold;
+}
+
+/* Efecto visual de bloqueo */
+.input-bloqueado {
+  opacity: 0.5;
+  filter: grayscale(1);
+  transition: all 0.3s ease;
 }
 </style>
