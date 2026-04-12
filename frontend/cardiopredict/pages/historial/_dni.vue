@@ -17,7 +17,7 @@
     >
       <div
         class="d-flex align-center mb-6 cursor-pointer"
-        @click="$router.back()"
+        @click="$router.push('/historial')"
       >
         <v-icon small color="grey">fas fa-arrow-left</v-icon>
         <span class="grey--text caption ml-2">Volver a búsqueda</span>
@@ -69,9 +69,9 @@
             color="#635b5b"
             class="white--text custom-btn"
             small
-            @click="irADetalle(item)"
+            :to="`/historial/datos?dni=${item.dni}`"
           >
-            VER / COMPLETAR DATOS
+            VER DATOS
           </v-btn>
         </v-col>
       </v-row>

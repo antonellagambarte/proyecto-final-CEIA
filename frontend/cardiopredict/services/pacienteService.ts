@@ -39,7 +39,7 @@ export const pacienteService = {
     return await response.json();
   },
 
-  async predecirAlVuelo(payload) {
+  async predecirAlVuelo(payload: any) {
     try {
       const response = await fetch(`${API_URL}/pacientes/predecir`, {
         method: "POST",
