@@ -8,6 +8,39 @@
       overflow: hidden;
     "
   >
+    <v-dialog v-model="modalConfirmacion" max-width="450" persistent>
+      <v-card color="#2a2a2a" class="pa-4 text-center border-grey">
+        <v-icon color="warning" size="64" class="mb-4"
+          >fas fa-exclamation-triangle</v-icon
+        >
+        <v-card-title class="white--text justify-center text-h5">
+          ¿Estás seguro?
+        </v-card-title>
+        <v-card-text class="grey--text text--lighten-1">
+          Una vez guardados, los datos del paciente
+          <strong class="white--text">no podrán ser modificados</strong>.
+          Verifica que toda la información sea correcta.
+        </v-card-text>
+        <v-card-actions class="justify-center mt-2">
+          <v-btn
+            text
+            color="grey lighten-1"
+            class="px-6 custom-btn"
+            @click="modalConfirmacion = false"
+          >
+            CANCELAR
+          </v-btn>
+          <v-btn
+            color="success"
+            class="px-6 custom-btn"
+            @click="confirmarGuardado"
+          >
+            SÍ, GUARDAR
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="modalExito" max-width="400" persistent>
       <v-card color="#2a2a2a" class="pa-4 text-center border-grey">
         <v-icon
@@ -36,13 +69,19 @@
               resultadoIA.probabilidad > 0.4 ? 'red darken-4' : 'green darken-4'
             "
           >
-            <div class="white--text text-overline mb-1">
+            <!-- <div class="white--text text-overline mb-1">
               Probabilidad Calculada
             </div>
             <div class="white--text text-h4 font-weight-black">
               {{ (resultadoIA.probabilidad * 100).toFixed(2) }}%
             </div>
             <div class="white--text text-subtitle-1 font-weight-bold mt-1">
+              RIESGO {{ resultadoIA.probabilidad > 0.4 ? "ALTO" : "BAJO" }}
+            </div> -->
+            <div class="white--text text-overline mb-1">
+              Probabilidad de riesgo
+            </div>
+            <div class="white--text text-h4 font-weight-black">
               RIESGO {{ resultadoIA.probabilidad > 0.4 ? "ALTO" : "BAJO" }}
             </div>
           </div>
@@ -58,7 +97,16 @@
           </div>
         </v-card-text>
 
-        <v-card-actions class="justify-center">
+        <v-card-actions class="justify-center flex-column flex-sm-row mt-2">
+          <v-btn
+            v-if="resultadoIA"
+            text
+            color="grey lighten-1"
+            class="px-4 custom-btn mb-2 mb-sm-0 mr-sm-2"
+            @click="verDetalles"
+          >
+            VER DETALLES
+          </v-btn>
           <v-btn color="success" class="px-10 custom-btn" @click="cerrarModal">
             ACEPTAR
           </v-btn>
@@ -173,7 +221,7 @@
               Antecedentes médicos *
             </h3>
             <v-row dense>
-              <v-col cols="12" md="4" class="mb-3">
+              <v-col cols="12" md="3" class="mb-3">
                 <p class="custom-label">¿Es diabético?</p>
                 <v-select
                   v-model="form.diabetico"
@@ -190,7 +238,7 @@
                   :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
-              <v-col cols="12" md="4" class="mb-3">
+              <v-col cols="12" md="3" class="mb-3">
                 <p class="custom-label">¿Es hipertenso?</p>
                 <v-select
                   v-model="form.hipertension"
@@ -207,7 +255,24 @@
                   :rules="[(v) => v !== null || 'Requerido']"
                 ></v-select>
               </v-col>
-              <v-col cols="12" md="4" class="mb-3">
+              <v-col cols="12" md="3" class="mb-3">
+                <p class="custom-label">¿Es asmático?</p>
+                <v-select
+                  v-model="form.asma"
+                  :items="itemsCompletos"
+                  item-text="text"
+                  item-value="value"
+                  solo
+                  background-color="#4a4444"
+                  dark
+                  hide-details="auto"
+                  dense
+                  :readonly="!bloqueoEdicion"
+                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :rules="[(v) => v !== null || 'Requerido']"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" md="3" class="mb-3">
                 <p class="custom-label">¿Problemas renales?</p>
                 <v-select
                   v-model="form.renales"
@@ -343,8 +408,8 @@
       <v-row no-gutters justify="end" align="center">
         <v-btn
           v-if="paso >= 3"
-          text
-          color="success"
+          outlined
+          color="#a39a9a"
           class="mr-4 custom-btn"
           @click="guardarCambios(false)"
         >
@@ -370,8 +435,7 @@
 
         <v-btn
           v-if="paso >= 3"
-          outlined
-          color="#a39a9a"
+          color="success"
           class="mr-4 custom-btn"
           @click="predecir"
         >
@@ -409,6 +473,7 @@ export default {
   data() {
     return {
       modalExito: false,
+      modalConfirmacion: false,
       mensajeRiesgo: "",
       resultadoIA: null,
       paso: 1,
@@ -550,14 +615,94 @@ export default {
     },
   },
   methods: {
+    async guardarCambios(silencioso = false) {
+      if (!this.$refs.form.validate()) return;
+      if (silencioso) {
+        await this.confirmarGuardado(true);
+      } else {
+        this.modalConfirmacion = true;
+      }
+    },
+
+    async confirmarGuardado(silencioso = false) {
+      this.modalConfirmacion = false;
+      try {
+        const mapaRespuestas = (valor) => {
+          if (valor === "S") return 1.0;
+          if (valor === "N") return 2.0;
+          if (valor === "X") return 9.0;
+          if (valor === "P") return 3.0;
+          return null;
+        };
+
+        const payload = {
+          id: this.form.id,
+          apellido: this.form.apellido,
+          nombre: this.form.nombre,
+          dni: this.form.dni,
+          genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
+          edad: this.form.edad ? parseInt(this.form.edad) : null,
+          fumo_100_cigarrillos: mapaRespuestas(this.form.fumador),
+          consumo_alcohol_ultimo_año: this.form.alcohol,
+          actividad_deportiva_moderada_x_semana: this.form.ejercicio,
+          anhedonia: this.form.anhedonia,
+          riñones_debiles_fallando: mapaRespuestas(this.form.renales),
+          diabetes: mapaRespuestas(this.form.diabetico),
+          hipertension: mapaRespuestas(this.form.hipertension),
+          asma: mapaRespuestas(this.form.asma),
+          fam_cardio: mapaRespuestas(this.form.fam_cardio),
+          fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
+          fam_asma: mapaRespuestas(this.form.fam_asma),
+          altura: this.form.altura ? parseFloat(this.form.altura) : null,
+          peso: this.form.peso ? parseFloat(this.form.peso) : null,
+          presion_sistolica_final: this.form.presion_sis
+            ? parseFloat(this.form.presion_sis)
+            : null,
+          presion_diastolica_final: this.form.presion_dis
+            ? parseFloat(this.form.presion_dis)
+            : null,
+          colesterol_total: this.form.colesterol
+            ? parseFloat(this.form.colesterol)
+            : null,
+          hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
+          trigliceridos: this.form.trigliceridos
+            ? parseFloat(this.form.trigliceridos)
+            : null,
+          creatinina: this.form.creatinina
+            ? parseFloat(this.form.creatinina)
+            : null,
+          proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
+          hemoglobina: this.form.hemoglobina
+            ? parseFloat(this.form.hemoglobina)
+            : null,
+          acido_urico: this.form.acido_urico
+            ? parseFloat(this.form.acido_urico)
+            : null,
+          potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
+        };
+
+        const res = await pacienteService.guardar(payload);
+        if (res && res.id) {
+          this.form.id = res.id;
+          if (this.modoEdicion) this.bloqueoEdicion = false;
+          if (!silencioso) {
+            this.resultadoIA = null;
+            this.mensajeRiesgo = "";
+            this.modalExito = true;
+          }
+        }
+      } catch (e) {
+        console.error("Error al guardar:", e);
+      }
+    },
+
     async siguiente() {
       const esValido = this.$refs.form.validate();
       if (!esValido && this.paso < 4) return;
       if (this.paso < 4) {
         this.paso++;
       } else {
-        await this.guardarCambios();
-        this.$emit("finalizar", this.form);
+        this.modalConfirmacion = true;
       }
     },
 
@@ -568,6 +713,13 @@ export default {
     cerrarModal() {
       this.modalExito = false;
       this.resultadoIA = null;
+      if (this.paso === 4) this.$emit("finalizar", this.form);
+    },
+
+    verDetalles() {
+      // Lógica para mostrar detalles técnicos o navegar a otra vista
+      console.log("Mostrando detalles de:", this.resultadoIA);
+      this.$emit("ver-detalles", this.resultadoIA);
     },
 
     async predecir() {
@@ -591,6 +743,7 @@ export default {
           riñones_debiles_fallando: mapaRespuestas(this.form.renales),
           diabetes: mapaRespuestas(this.form.diabetico),
           hipertension: mapaRespuestas(this.form.hipertension),
+          asma: mapaRespuestas(this.form.asma),
           fam_cardio: mapaRespuestas(this.form.fam_cardio),
           fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
           fam_asma: mapaRespuestas(this.form.fam_asma),
@@ -626,9 +779,7 @@ export default {
         this.resultadoIA = res;
         this.modalExito = true;
       } catch (e) {
-        alert(
-          "No se pudo realizar la predicción. Revisa los datos ingresados."
-        );
+        alert("No se pudo realizar la predicción. Revisa los datos.");
       }
     },
 
@@ -642,6 +793,7 @@ export default {
         edad: null,
         diabetico: null,
         hipertension: null,
+        asma: null,
         renales: null,
         alcohol: null,
         ejercicio: null,
@@ -663,79 +815,6 @@ export default {
         acido_urico: null,
         potasio: null,
       };
-    },
-
-    async guardarCambios(silencioso = false) {
-      if (!silencioso && !this.$refs.form.validate()) return;
-      try {
-        const mapaRespuestas = (valor) => {
-          if (valor === "S") return 1.0;
-          if (valor === "N") return 2.0;
-          if (valor === "X") return 9.0;
-          if (valor === "P") return 3.0;
-          return null;
-        };
-
-        const payload = {
-          id: this.form.id,
-          apellido: this.form.apellido,
-          nombre: this.form.nombre,
-          dni: this.form.dni,
-          genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
-          edad: this.form.edad ? parseInt(this.form.edad) : null,
-          fumo_100_cigarrillos: mapaRespuestas(this.form.fumador),
-          consumo_alcohol_ultimo_año: this.form.alcohol,
-          actividad_deportiva_moderada_x_semana: this.form.ejercicio,
-          anhedonia: this.form.anhedonia,
-          riñones_debiles_fallando: mapaRespuestas(this.form.renales),
-          diabetes: mapaRespuestas(this.form.diabetico),
-          hipertension: mapaRespuestas(this.form.hipertension),
-          fam_cardio: mapaRespuestas(this.form.fam_cardio),
-          fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
-          fam_asma: mapaRespuestas(this.form.fam_asma),
-          altura: this.form.altura ? parseFloat(this.form.altura) : null,
-          peso: this.form.peso ? parseFloat(this.form.peso) : null,
-          presion_sistolica_final: this.form.presion_sis
-            ? parseFloat(this.form.presion_sis)
-            : null,
-          presion_diastolica_final: this.form.presion_dis
-            ? parseFloat(this.form.presion_dis)
-            : null,
-          colesterol_total: this.form.colesterol
-            ? parseFloat(this.form.colesterol)
-            : null,
-          hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
-          trigliceridos: this.form.trigliceridos
-            ? parseFloat(this.form.trigliceridos)
-            : null,
-          creatinina: this.form.creatinina
-            ? parseFloat(this.form.creatinina)
-            : null,
-          proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
-          hemoglobina: this.form.hemoglobina
-            ? parseFloat(this.form.hemoglobina)
-            : null,
-          acido_urico: this.form.acido_urico
-            ? parseFloat(this.form.acido_urico)
-            : null,
-          potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
-        };
-
-        const res = await pacienteService.guardar(payload);
-
-        if (res && res.id) {
-          this.form.id = res.id;
-          if (this.modoEdicion) this.bloqueoEdicion = false;
-
-          if (!silencioso) {
-            this.resultadoIA = null;
-            this.mensajeRiesgo = "";
-            this.modalExito = true;
-          }
-        }
-      } catch (e) {
-        console.error("Error al guardar:", e);
-      }
     },
   },
 };
