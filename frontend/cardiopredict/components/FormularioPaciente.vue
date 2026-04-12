@@ -14,12 +14,12 @@
           >fas fa-exclamation-triangle</v-icon
         >
         <v-card-title class="white--text justify-center text-h5"
-          >¿Estás seguro?</v-card-title
+          >¿Confirmar Guardado?</v-card-title
         >
         <v-card-text class="grey--text text--lighten-1">
           Una vez guardados, los datos del paciente
-          <strong class="white--text">no podrán ser modificados</strong>.
-          Verifica que toda la información sea correcta.
+          <strong class="white--text">quedarán bloqueados</strong> para asegurar
+          la integridad de la historia clínica.
         </v-card-text>
         <v-card-actions class="justify-center mt-2">
           <v-btn
@@ -27,16 +27,14 @@
             color="grey lighten-1"
             class="px-6 custom-btn"
             @click="modalConfirmacion = false"
+            >CANCELAR</v-btn
           >
-            CANCELAR
-          </v-btn>
           <v-btn
             color="success"
             class="px-6 custom-btn"
             @click="confirmarGuardado"
+            >SÍ, GUARDAR</v-btn
           >
-            SÍ, GUARDAR
-          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -59,7 +57,7 @@
         <v-card-title class="white--text justify-center text-h5">
           {{ resultadoIA ? "Resultado de Riesgo" : "¡Guardado con éxito!" }}
         </v-card-title>
-        <v-card-text class="grey--text text--lighten-1">
+        <v-card-text class="grey--text text--lighten-1 text-center">
           <div
             v-if="resultadoIA"
             class="mt-2 pa-4 rounded-lg"
@@ -74,9 +72,7 @@
               RIESGO {{ resultadoIA.probabilidad > 0.4 ? "ALTO" : "BAJO" }}
             </div>
           </div>
-          <div v-else>
-            Los datos han sido sincronizados correctamente en el sistema.
-          </div>
+          <div v-else>Los datos han sido sincronizados correctamente.</div>
         </v-card-text>
         <v-card-actions class="justify-center mt-2">
           <v-btn color="success" class="px-10 custom-btn" @click="cerrarModal"
@@ -94,7 +90,13 @@
       >
         <v-icon small color="grey lighten-1">fas fa-arrow-left</v-icon>
         <span class="grey--text text--lighten-1 caption ml-2">
-          {{ modoEdicion ? "Volver al historial" : "Nuevo paciente" }}
+          {{
+            modoEdicion
+              ? "Volver al historial"
+              : paso === 1
+              ? "Volver a búsqueda"
+              : "Nuevo paciente"
+          }}
         </span>
       </div>
     </v-sheet>
@@ -117,28 +119,28 @@
                 <v-text-field
                   v-model="form.apellido"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado('apellido')"
+                  :class="{ 'input-bloqueado': esCampoBloqueado('apellido') }"
                   :rules="[(v) => !!v || 'Requerido']"
-                ></v-text-field>
+                />
               </v-col>
               <v-col cols="12" md="5" offset-md="1">
                 <p class="custom-label">Nombre *</p>
                 <v-text-field
                   v-model="form.nombre"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado('nombre')"
+                  :class="{ 'input-bloqueado': esCampoBloqueado('nombre') }"
                   :rules="[(v) => !!v || 'Requerido']"
-                ></v-text-field>
+                />
               </v-col>
             </v-row>
             <v-row dense class="mb-6">
@@ -148,42 +150,42 @@
                   v-model="form.genero"
                   :items="['Masculino', 'Femenino']"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado('genero')"
+                  :class="{ 'input-bloqueado': esCampoBloqueado('genero') }"
                   :rules="[(v) => !!v || 'Requerido']"
-                ></v-select>
+                />
               </v-col>
               <v-col cols="12" md="3" offset-md="1">
                 <p class="custom-label">DNI *</p>
                 <v-text-field
                   v-model="form.dni"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado('dni')"
+                  :class="{ 'input-bloqueado': esCampoBloqueado('dni') }"
                   :rules="[(v) => !!v || 'Requerido']"
-                ></v-text-field>
+                />
               </v-col>
               <v-col cols="12" md="2" offset-md="1">
                 <p class="custom-label">Edad *</p>
                 <v-text-field
                   v-model="form.edad"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado('edad')"
+                  :class="{ 'input-bloqueado': esCampoBloqueado('edad') }"
                   :rules="[(v) => !!v || 'Requerido']"
-                ></v-text-field>
+                />
               </v-col>
             </v-row>
             <v-divider class="grey darken-3 mb-6"></v-divider>
@@ -191,73 +193,27 @@
               Antecedentes médicos *
             </h3>
             <v-row dense>
-              <v-col cols="12" md="3" class="mb-3">
-                <p class="custom-label">¿Es diabético?</p>
+              <v-col
+                cols="12"
+                md="3"
+                v-for="(item, idx) in antecedentesMedicos"
+                :key="idx"
+              >
+                <p class="custom-label">{{ item.label }}</p>
                 <v-select
-                  v-model="form.diabetico"
-                  :items="itemsDiabetes"
+                  v-model="form[item.key]"
+                  :items="item.options"
                   item-text="text"
                   item-value="value"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
-                  :rules="[(v) => v !== null || 'Requerido']"
-                ></v-select>
-              </v-col>
-              <v-col cols="12" md="3" class="mb-3">
-                <p class="custom-label">¿Es hipertenso?</p>
-                <v-select
-                  v-model="form.hipertension"
-                  :items="itemsCompletos"
-                  item-text="text"
-                  item-value="value"
-                  solo
+                  hide-details="auto"
                   background-color="#4a4444"
-                  dark
-                  hide-details="auto"
-                  dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  :readonly="esCampoBloqueado(item.key)"
+                  :class="{ 'input-bloqueado': esCampoBloqueado(item.key) }"
                   :rules="[(v) => v !== null || 'Requerido']"
-                ></v-select>
-              </v-col>
-              <v-col cols="12" md="3" class="mb-3">
-                <p class="custom-label">¿Es asmático?</p>
-                <v-select
-                  v-model="form.asma"
-                  :items="itemsCompletos"
-                  item-text="text"
-                  item-value="value"
-                  solo
-                  background-color="#4a4444"
-                  dark
-                  hide-details="auto"
-                  dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
-                  :rules="[(v) => v !== null || 'Requerido']"
-                ></v-select>
-              </v-col>
-              <v-col cols="12" md="3" class="mb-3">
-                <p class="custom-label">¿Problemas renales?</p>
-                <v-select
-                  v-model="form.renales"
-                  :items="itemsCompletos"
-                  item-text="text"
-                  item-value="value"
-                  solo
-                  background-color="#4a4444"
-                  dark
-                  hide-details="auto"
-                  dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
-                  :rules="[(v) => v !== null || 'Requerido']"
-                ></v-select>
+                />
               </v-col>
             </v-row>
           </div>
@@ -272,14 +228,14 @@
                   item-text="text"
                   item-value="value"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado(q.key)"
+                  :class="{ 'input-bloqueado': esCampoBloqueado(q.key) }"
                   :rules="[(v) => v !== null || 'Requerido']"
-                ></v-select>
+                />
               </v-col>
             </v-row>
           </div>
@@ -300,14 +256,14 @@
                   item-text="text"
                   item-value="value"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado(ant.key)"
+                  :class="{ 'input-bloqueado': esCampoBloqueado(ant.key) }"
                   :rules="[(v) => v !== null || 'Requerido']"
-                ></v-select>
+                />
               </v-col>
             </v-row>
             <v-divider class="grey darken-3 mb-6"></v-divider>
@@ -325,14 +281,14 @@
                 <v-text-field
                   v-model="form[itemF.key]"
                   solo
-                  background-color="#4a4444"
                   dark
-                  hide-details="auto"
                   dense
-                  :readonly="!bloqueoEdicion"
-                  :class="{ 'input-bloqueado': !bloqueoEdicion }"
+                  hide-details="auto"
+                  background-color="#4a4444"
+                  :readonly="esCampoBloqueado(itemF.key)"
+                  :class="{ 'input-bloqueado': esCampoBloqueado(itemF.key) }"
                   :rules="[(v) => !!v || 'Requerido']"
-                ></v-text-field>
+                />
               </v-col>
             </v-row>
           </div>
@@ -355,13 +311,13 @@
                   <v-text-field
                     v-model="form[campo.key]"
                     solo
-                    background-color="#4a4444"
                     dark
-                    hide-details
                     dense
-                    :readonly="!bloqueoEdicion"
-                    :class="{ 'input-bloqueado': !bloqueoEdicion }"
-                  ></v-text-field>
+                    hide-details
+                    background-color="#4a4444"
+                    :readonly="esCampoBloqueado(campo.key)"
+                    :class="{ 'input-bloqueado': esCampoBloqueado(campo.key) }"
+                  />
                 </v-col>
               </v-row>
               <v-divider
@@ -377,7 +333,7 @@
     <v-sheet color="transparent" width="100%" class="pa-10 flex-shrink-0">
       <v-row no-gutters justify="end" align="center">
         <v-btn
-          v-if="form.id && !bloqueoEdicion"
+          v-if="form.id"
           color="info"
           outlined
           class="mr-4 custom-btn"
@@ -386,26 +342,14 @@
           <v-icon left small>fas fa-history</v-icon> VER HISTORIAL
         </v-btn>
 
-        <template v-if="bloqueoEdicion">
-          <v-btn
-            v-if="paso >= 3"
-            outlined
-            color="success"
-            class="mr-4 custom-btn"
-            @click="guardarCambios"
-          >
-            <v-icon left small>fas fa-save</v-icon>
-            {{ modoEdicion ? "CONFIRMAR EDICIÓN" : "GUARDAR DATOS" }}
-          </v-btn>
-        </template>
-
         <v-btn
-          v-else-if="modoEdicion"
-          color="#635b5b"
-          class="white--text mr-4 custom-btn"
-          @click="bloqueoEdicion = true"
+          v-if="mostrarBotonGuardar"
+          color="success"
+          outlined
+          class="mr-4 custom-btn"
+          @click="guardarCambios"
         >
-          MODIFICAR DATOS
+          <v-icon left small>fas fa-save</v-icon> GUARDAR DATOS
         </v-btn>
 
         <v-btn
@@ -423,9 +367,8 @@
           color="#635b5b"
           class="white--text custom-btn px-10"
           @click="siguiente"
+          >SIGUIENTE</v-btn
         >
-          SIGUIENTE
-        </v-btn>
       </v-row>
     </v-sheet>
   </v-container>
@@ -452,8 +395,9 @@ export default {
       resultadoIA: null,
       paso: 1,
       formValido: false,
-      bloqueoEdicion: !this.modoEdicion,
+      bloqueoEdicion: this.modoEdicion,
       form: this.inicializarForm(),
+      camposPersistidos: [],
       itemsCompletos: [
         { text: "Sí", value: OpcionesCompletas.SI },
         { text: "No", value: OpcionesCompletas.NO },
@@ -465,36 +409,13 @@ export default {
         { text: "No sabe", value: OpcionesDiabetes.NO_SABE },
         { text: "Prediabetes", value: OpcionesDiabetes.PREDIABETES },
       ],
-      itemsAlcohol: [
-        { text: "Nunca", value: OpcionesAlcohol.NUNCA },
-        { text: "Todos los días", value: OpcionesAlcohol.DIARIAMENTE },
-        { text: "Casi diario", value: OpcionesAlcohol.CASI_DIARIO },
-        {
-          text: "3-4 veces x semana",
-          value: OpcionesAlcohol.TRES_CUATRO_SEMANA,
-        },
-        { text: "2 veces x semana", value: OpcionesAlcohol.DOS_VECES_SEMANA },
-        { text: "Una vez x semana", value: OpcionesAlcohol.UNA_VEZ_SEMANA },
-        { text: "2-3 veces x mes", value: OpcionesAlcohol.DOS_TRES_MES },
-        { text: "Una vez al mes", value: OpcionesAlcohol.UNA_VEZ_MES },
-        { text: "7-11 veces al año", value: OpcionesAlcohol.SIETE_ONCE_AÑO },
-        { text: "3-6 veces al año", value: OpcionesAlcohol.TRES_SEIS_AÑO },
-        { text: "1-2 veces al año", value: OpcionesAlcohol.UNA_DOS_AÑO },
-        { text: "No sabe", value: OpcionesAlcohol.NO_SABE },
-      ],
-      itemsAnhedonia: [
-        { text: "Para nada", value: OpcionesAnhedonia.NADA },
-        { text: "Varios días", value: OpcionesAnhedonia.VARIOS_DIAS },
-        { text: "Más de la mitad", value: OpcionesAnhedonia.MAS_DE_LA_MITAD },
-        { text: "Casi todos los días", value: OpcionesAnhedonia.CASI_DIARIO },
-        { text: "No sabe", value: OpcionesAnhedonia.NO_SABE },
-      ],
       titulos: [
         "Datos personales",
         "Estilo de vida",
         "Antecedentes familiares",
         "Resultados de laboratorio",
       ],
+      antecedentesMedicos: [],
       preguntasVida: [],
       antecedentesFamiliaresConfig: [
         { key: "fam_cardio", label: "Enfermedad cardiovascular" },
@@ -534,12 +455,43 @@ export default {
       ],
     };
   },
+  computed: {
+    pasoLabGuardado() {
+      const keysLab = this.laboratorio.flatMap((s) =>
+        s.campos.map((c) => c.key)
+      );
+      return keysLab.every((key) => this.camposPersistidos.includes(key));
+    },
+    mostrarBotonGuardar() {
+      if (this.paso < 3) return false;
+      if (this.paso === 4) return !this.pasoLabGuardado;
+      return !this.bloqueoEdicion;
+    },
+  },
   created() {
+    this.antecedentesMedicos = [
+      {
+        key: "diabetico",
+        label: "¿Es diabético?",
+        options: this.itemsDiabetes,
+      },
+      {
+        key: "hipertension",
+        label: "¿Es hipertenso?",
+        options: this.itemsCompletos,
+      },
+      { key: "asma", label: "¿Es asmático?", options: this.itemsCompletos },
+      {
+        key: "renales",
+        label: "¿Problemas renales?",
+        options: this.itemsCompletos,
+      },
+    ];
     this.preguntasVida = [
       {
         key: "alcohol",
         label: "Frecuencia de consumo de alcohol",
-        options: this.itemsAlcohol,
+        options: this.getAlcoholOptions(),
       },
       {
         key: "ejercicio",
@@ -557,34 +509,47 @@ export default {
       {
         key: "anhedonia",
         label: "Presencia de Anhedonia",
-        options: this.itemsAnhedonia,
+        options: this.getAnhedoniaOptions(),
       },
     ];
   },
   watch: {
     datosIniciales: {
       handler(newVal) {
-        if (newVal && Object.keys(newVal).length > 0)
+        if (newVal && Object.keys(newVal).length > 0) {
           this.form = { ...this.form, ...newVal };
+          this.camposPersistidos = Object.keys(newVal).filter(
+            (k) => newVal[k] !== null && newVal[k] !== "" && k !== "id"
+          );
+        }
       },
       immediate: true,
       deep: true,
     },
   },
   methods: {
+    esCampoBloqueado(campo) {
+      return this.camposPersistidos.includes(campo);
+    },
     async guardarCambios() {
       if (!this.$refs.form.validate()) return;
       this.modalConfirmacion = true;
     },
     async confirmarGuardado() {
       this.modalConfirmacion = false;
-      this.resultadoIA = null;
       try {
         const payload = this.prepararPayload();
         const res = await pacienteService.guardar(payload);
         if (res?.id) {
           this.form.id = res.id;
-          this.bloqueoEdicion = false;
+          const camposConDatos = Object.keys(this.form).filter(
+            (k) => this.form[k] !== null && this.form[k] !== "" && k !== "id"
+          );
+          this.camposPersistidos = [
+            ...new Set([...this.camposPersistidos, ...camposConDatos]),
+          ];
+          this.bloqueoEdicion = true;
+          this.resultadoIA = null;
           this.modalExito = true;
         }
       } catch (e) {
@@ -592,6 +557,7 @@ export default {
       }
     },
     async predecir() {
+      if (!this.$refs.form.validate()) return;
       try {
         const res = await pacienteService.predecirAlVuelo(
           this.prepararPayload()
@@ -599,7 +565,7 @@ export default {
         this.resultadoIA = res;
         this.modalExito = true;
       } catch (e) {
-        alert("Error en predicción.");
+        console.error(e);
       }
     },
     prepararPayload() {
@@ -631,16 +597,14 @@ export default {
       };
     },
     siguiente() {
-      if (!this.$refs.form.validate()) return;
-      if (this.paso < 4) this.paso++;
+      if (this.$refs.form.validate() && this.paso < 4) this.paso++;
     },
     manejarAtras() {
       this.paso > 1 ? this.paso-- : this.$emit("atras");
     },
     cerrarModal() {
       this.modalExito = false;
-      // Si estamos en el último paso y cerramos después de guardar, emitimos finalizar
-      if (this.paso === 4 && !this.bloqueoEdicion)
+      if (this.paso === 4 && this.pasoLabGuardado)
         this.$emit("finalizar", this.form);
     },
     inicializarForm() {
@@ -676,6 +640,31 @@ export default {
         potasio: null,
       };
     },
+    getAlcoholOptions() {
+      return [
+        { text: "Nunca", value: OpcionesAlcohol.NUNCA },
+        { text: "Diariamente", value: OpcionesAlcohol.DIARIAMENTE },
+        { text: "Casi diario", value: OpcionesAlcohol.CASI_DIARIO },
+        {
+          text: "3-4 veces x semana",
+          value: OpcionesAlcohol.TRES_CUATRO_SEMANA,
+        },
+        { text: "2 veces x semana", value: OpcionesAlcohol.DOS_VECES_SEMANA },
+        { text: "Una vez x semana", value: OpcionesAlcohol.UNA_VEZ_SEMANA },
+        { text: "2-3 veces x mes", value: OpcionesAlcohol.DOS_TRES_MES },
+        { text: "Una vez al mes", value: OpcionesAlcohol.UNA_VEZ_MES },
+        { text: "No sabe", value: OpcionesAlcohol.NO_SABE },
+      ];
+    },
+    getAnhedoniaOptions() {
+      return [
+        { text: "Para nada", value: OpcionesAnhedonia.NADA },
+        { text: "Varios días", value: OpcionesAnhedonia.VARIOS_DIAS },
+        { text: "Más de la mitad", value: OpcionesAnhedonia.MAS_DE_LA_MITAD },
+        { text: "Casi todos los días", value: OpcionesAnhedonia.CASI_DIARIO },
+        { text: "No sabe", value: OpcionesAnhedonia.NO_SABE },
+      ];
+    },
   },
 };
 </script>
@@ -696,9 +685,8 @@ export default {
   border: 1px solid #4a4a4a !important;
 }
 .input-bloqueado {
-  opacity: 0.5 !important;
+  opacity: 0.7;
+  filter: grayscale(0.4);
   pointer-events: none;
-  filter: grayscale(1);
-  transition: all 0.3s ease;
 }
 </style>
