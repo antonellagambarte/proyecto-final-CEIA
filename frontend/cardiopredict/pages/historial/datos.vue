@@ -47,7 +47,7 @@
             style="text-transform: none"
             @click="irAEditar"
           >
-            <v-icon left small>mdi-pencil</v-icon>
+            <v-icon left small>fas fa-pencil</v-icon>
             Completar datos faltantes
           </v-btn>
         </div>
