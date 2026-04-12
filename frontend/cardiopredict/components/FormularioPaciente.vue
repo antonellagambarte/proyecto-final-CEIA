@@ -74,10 +74,24 @@
           </div>
           <div v-else>Los datos han sido sincronizados correctamente.</div>
         </v-card-text>
-        <v-card-actions class="justify-center mt-2">
-          <v-btn color="success" class="px-10 custom-btn" @click="cerrarModal"
-            >ACEPTAR</v-btn
+        <v-card-actions class="justify-center mt-2 pb-4">
+          <v-btn
+            v-if="resultadoIA"
+            text
+            color="info"
+            class="px-6 custom-btn"
+            @click="irADetallePrediccion"
           >
+            VER DETALLE
+          </v-btn>
+
+          <v-btn
+            color="success"
+            class="px-10 custom-btn ml-2"
+            @click="cerrarModal"
+          >
+            ACEPTAR
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -665,6 +679,11 @@ export default {
         { text: "No sabe", value: OpcionesAnhedonia.NO_SABE },
       ];
     },
+  },
+
+  irADetallePrediccion() {
+    this.modalExito = false;
+    this.$router.push(`/historial/prediccion/${this.form.dni}`);
   },
 };
 </script>
