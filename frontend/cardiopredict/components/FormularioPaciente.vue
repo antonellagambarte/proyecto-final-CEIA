@@ -13,9 +13,9 @@
         <v-icon color="warning" size="64" class="mb-4"
           >fas fa-exclamation-triangle</v-icon
         >
-        <v-card-title class="white--text justify-center text-h5">
-          ¿Estás seguro?
-        </v-card-title>
+        <v-card-title class="white--text justify-center text-h5"
+          >¿Estás seguro?</v-card-title
+        >
         <v-card-text class="grey--text text--lighten-1">
           Una vez guardados, los datos del paciente
           <strong class="white--text">no podrán ser modificados</strong>.
@@ -56,11 +56,9 @@
         >
           {{ resultadoIA ? "fas fa-chart-line" : "fas fa-check-circle" }}
         </v-icon>
-
         <v-card-title class="white--text justify-center text-h5">
           {{ resultadoIA ? "Resultado de Riesgo" : "¡Guardado con éxito!" }}
         </v-card-title>
-
         <v-card-text class="grey--text text--lighten-1">
           <div
             v-if="resultadoIA"
@@ -69,15 +67,6 @@
               resultadoIA.probabilidad > 0.4 ? 'red darken-4' : 'green darken-4'
             "
           >
-            <!-- <div class="white--text text-overline mb-1">
-              Probabilidad Calculada
-            </div>
-            <div class="white--text text-h4 font-weight-black">
-              {{ (resultadoIA.probabilidad * 100).toFixed(2) }}%
-            </div>
-            <div class="white--text text-subtitle-1 font-weight-bold mt-1">
-              RIESGO {{ resultadoIA.probabilidad > 0.4 ? "ALTO" : "BAJO" }}
-            </div> -->
             <div class="white--text text-overline mb-1">
               Probabilidad de riesgo
             </div>
@@ -85,31 +74,14 @@
               RIESGO {{ resultadoIA.probabilidad > 0.4 ? "ALTO" : "BAJO" }}
             </div>
           </div>
-
           <div v-else>
-            Los datos han sido sincronizados correctamente.
-            <div
-              v-if="mensajeRiesgo"
-              class="mt-4 success--text font-weight-bold"
-            >
-              {{ mensajeRiesgo }}
-            </div>
+            Los datos han sido sincronizados correctamente en el sistema.
           </div>
         </v-card-text>
-
-        <v-card-actions class="justify-center flex-column flex-sm-row mt-2">
-          <v-btn
-            v-if="resultadoIA"
-            text
-            color="grey lighten-1"
-            class="px-4 custom-btn mb-2 mb-sm-0 mr-sm-2"
-            @click="verDetalles"
+        <v-card-actions class="justify-center mt-2">
+          <v-btn color="success" class="px-10 custom-btn" @click="cerrarModal"
+            >ACEPTAR</v-btn
           >
-            VER DETALLES
-          </v-btn>
-          <v-btn color="success" class="px-10 custom-btn" @click="cerrarModal">
-            ACEPTAR
-          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -137,7 +109,6 @@
         <h2 class="white--text text-h4 mb-8 font-weight-light">
           {{ titulos[paso - 1] }}
         </h2>
-
         <v-form ref="form" v-model="formValido">
           <div v-if="paso === 1">
             <v-row dense class="mb-4">
@@ -215,7 +186,6 @@
                 ></v-text-field>
               </v-col>
             </v-row>
-
             <v-divider class="grey darken-3 mb-6"></v-divider>
             <h3 class="white--text text-h5 mb-6 font-weight-light">
               Antecedentes médicos *
@@ -407,31 +377,36 @@
     <v-sheet color="transparent" width="100%" class="pa-10 flex-shrink-0">
       <v-row no-gutters justify="end" align="center">
         <v-btn
-          v-if="paso >= 3"
+          v-if="form.id && !bloqueoEdicion"
+          color="info"
           outlined
-          color="#a39a9a"
           class="mr-4 custom-btn"
-          @click="guardarCambios(false)"
+          @click="$router.push(`/historial/${form.dni}`)"
         >
-          <v-icon left small>fas fa-save</v-icon> GUARDAR DATOS
+          <v-icon left small>fas fa-history</v-icon> VER HISTORIAL
         </v-btn>
 
-        <template v-if="modoEdicion">
+        <template v-if="bloqueoEdicion">
           <v-btn
-            v-if="!bloqueoEdicion"
-            color="#635b5b"
-            class="white--text mr-4 custom-btn"
-            @click="bloqueoEdicion = true"
-            >MODIFICAR DATOS</v-btn
-          >
-          <v-btn
-            v-else
+            v-if="paso >= 3"
+            outlined
             color="success"
-            class="white--text mr-4 custom-btn"
-            @click="guardarCambios(false)"
-            >CONFIRMAR EDICIÓN</v-btn
+            class="mr-4 custom-btn"
+            @click="guardarCambios"
           >
+            <v-icon left small>fas fa-save</v-icon>
+            {{ modoEdicion ? "CONFIRMAR EDICIÓN" : "GUARDAR DATOS" }}
+          </v-btn>
         </template>
+
+        <v-btn
+          v-else-if="modoEdicion"
+          color="#635b5b"
+          class="white--text mr-4 custom-btn"
+          @click="bloqueoEdicion = true"
+        >
+          MODIFICAR DATOS
+        </v-btn>
 
         <v-btn
           v-if="paso >= 3"
@@ -444,11 +419,12 @@
         </v-btn>
 
         <v-btn
+          v-if="paso < 4"
           color="#635b5b"
           class="white--text custom-btn px-10"
           @click="siguiente"
         >
-          {{ paso === 4 ? "FINALIZAR" : "SIGUIENTE" }}
+          SIGUIENTE
         </v-btn>
       </v-row>
     </v-sheet>
@@ -459,7 +435,6 @@
 import { pacienteService } from "~/services/pacienteService";
 import {
   OpcionesCompletas,
-  OpcionesBinarias,
   OpcionesDiabetes,
   OpcionesAlcohol,
   OpcionesAnhedonia,
@@ -474,16 +449,11 @@ export default {
     return {
       modalExito: false,
       modalConfirmacion: false,
-      mensajeRiesgo: "",
       resultadoIA: null,
       paso: 1,
       formValido: false,
       bloqueoEdicion: !this.modoEdicion,
       form: this.inicializarForm(),
-      itemsBinarios: [
-        { text: "Sí", value: OpcionesBinarias.SI },
-        { text: "No", value: OpcionesBinarias.NO },
-      ],
       itemsCompletos: [
         { text: "Sí", value: OpcionesCompletas.SI },
         { text: "No", value: OpcionesCompletas.NO },
@@ -496,40 +466,28 @@ export default {
         { text: "Prediabetes", value: OpcionesDiabetes.PREDIABETES },
       ],
       itemsAlcohol: [
-        { text: "Nunca en el último año", value: OpcionesAlcohol.NUNCA },
+        { text: "Nunca", value: OpcionesAlcohol.NUNCA },
         { text: "Todos los días", value: OpcionesAlcohol.DIARIAMENTE },
-        { text: "Casi todos los días", value: OpcionesAlcohol.CASI_DIARIO },
+        { text: "Casi diario", value: OpcionesAlcohol.CASI_DIARIO },
         {
-          text: "3 a 4 veces por semana",
+          text: "3-4 veces x semana",
           value: OpcionesAlcohol.TRES_CUATRO_SEMANA,
         },
-        { text: "2 veces por semana", value: OpcionesAlcohol.DOS_VECES_SEMANA },
-        { text: "Una vez por semana", value: OpcionesAlcohol.UNA_VEZ_SEMANA },
-        { text: "2 a 3 veces por mes", value: OpcionesAlcohol.DOS_TRES_MES },
+        { text: "2 veces x semana", value: OpcionesAlcohol.DOS_VECES_SEMANA },
+        { text: "Una vez x semana", value: OpcionesAlcohol.UNA_VEZ_SEMANA },
+        { text: "2-3 veces x mes", value: OpcionesAlcohol.DOS_TRES_MES },
         { text: "Una vez al mes", value: OpcionesAlcohol.UNA_VEZ_MES },
-        {
-          text: "7 a 11 veces en el último año",
-          value: OpcionesAlcohol.SIETE_ONCE_AÑO,
-        },
-        {
-          text: "3 a 6 veces en el último año",
-          value: OpcionesAlcohol.TRES_SEIS_AÑO,
-        },
-        {
-          text: "1 a 2 veces en el último año",
-          value: OpcionesAlcohol.UNA_DOS_AÑO,
-        },
-        { text: "No sabe / No recuerda", value: OpcionesAlcohol.NO_SABE },
+        { text: "7-11 veces al año", value: OpcionesAlcohol.SIETE_ONCE_AÑO },
+        { text: "3-6 veces al año", value: OpcionesAlcohol.TRES_SEIS_AÑO },
+        { text: "1-2 veces al año", value: OpcionesAlcohol.UNA_DOS_AÑO },
+        { text: "No sabe", value: OpcionesAlcohol.NO_SABE },
       ],
       itemsAnhedonia: [
         { text: "Para nada", value: OpcionesAnhedonia.NADA },
         { text: "Varios días", value: OpcionesAnhedonia.VARIOS_DIAS },
-        {
-          text: "Más de la mitad de los días",
-          value: OpcionesAnhedonia.MAS_DE_LA_MITAD,
-        },
+        { text: "Más de la mitad", value: OpcionesAnhedonia.MAS_DE_LA_MITAD },
         { text: "Casi todos los días", value: OpcionesAnhedonia.CASI_DIARIO },
-        { text: "No sabe / No recuerda", value: OpcionesAnhedonia.NO_SABE },
+        { text: "No sabe", value: OpcionesAnhedonia.NO_SABE },
       ],
       titulos: [
         "Datos personales",
@@ -566,7 +524,7 @@ export default {
           ],
         },
         {
-          titulo: "Hematología y otros",
+          titulo: "Hematología",
           campos: [
             { key: "hemoglobina", label: "Hemoglobina" },
             { key: "acido_urico", label: "Ácido úrico" },
@@ -585,7 +543,7 @@ export default {
       },
       {
         key: "ejercicio",
-        label: "Días de actividad física moderada",
+        label: "Días de actividad física",
         options: Array.from({ length: 8 }, (_, i) => ({
           text: `${i} días`,
           value: i,
@@ -606,183 +564,85 @@ export default {
   watch: {
     datosIniciales: {
       handler(newVal) {
-        if (newVal && Object.keys(newVal).length > 0) {
-          this.form = Object.assign({}, this.form, newVal);
-        }
+        if (newVal && Object.keys(newVal).length > 0)
+          this.form = { ...this.form, ...newVal };
       },
       immediate: true,
       deep: true,
     },
   },
   methods: {
-    async guardarCambios(silencioso = false) {
+    async guardarCambios() {
       if (!this.$refs.form.validate()) return;
-      if (silencioso) {
-        await this.confirmarGuardado(true);
-      } else {
-        this.modalConfirmacion = true;
-      }
+      this.modalConfirmacion = true;
     },
-
-    async confirmarGuardado(silencioso = false) {
+    async confirmarGuardado() {
       this.modalConfirmacion = false;
+      this.resultadoIA = null;
       try {
-        const mapaRespuestas = (valor) => {
-          if (valor === "S") return 1.0;
-          if (valor === "N") return 2.0;
-          if (valor === "X") return 9.0;
-          if (valor === "P") return 3.0;
-          return null;
-        };
-
-        const payload = {
-          id: this.form.id,
-          apellido: this.form.apellido,
-          nombre: this.form.nombre,
-          dni: this.form.dni,
-          genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
-          edad: this.form.edad ? parseInt(this.form.edad) : null,
-          fumo_100_cigarrillos: mapaRespuestas(this.form.fumador),
-          consumo_alcohol_ultimo_año: this.form.alcohol,
-          actividad_deportiva_moderada_x_semana: this.form.ejercicio,
-          anhedonia: this.form.anhedonia,
-          riñones_debiles_fallando: mapaRespuestas(this.form.renales),
-          diabetes: mapaRespuestas(this.form.diabetico),
-          hipertension: mapaRespuestas(this.form.hipertension),
-          asma: mapaRespuestas(this.form.asma),
-          fam_cardio: mapaRespuestas(this.form.fam_cardio),
-          fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
-          fam_asma: mapaRespuestas(this.form.fam_asma),
-          altura: this.form.altura ? parseFloat(this.form.altura) : null,
-          peso: this.form.peso ? parseFloat(this.form.peso) : null,
-          presion_sistolica_final: this.form.presion_sis
-            ? parseFloat(this.form.presion_sis)
-            : null,
-          presion_diastolica_final: this.form.presion_dis
-            ? parseFloat(this.form.presion_dis)
-            : null,
-          colesterol_total: this.form.colesterol
-            ? parseFloat(this.form.colesterol)
-            : null,
-          hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
-          trigliceridos: this.form.trigliceridos
-            ? parseFloat(this.form.trigliceridos)
-            : null,
-          creatinina: this.form.creatinina
-            ? parseFloat(this.form.creatinina)
-            : null,
-          proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
-          hemoglobina: this.form.hemoglobina
-            ? parseFloat(this.form.hemoglobina)
-            : null,
-          acido_urico: this.form.acido_urico
-            ? parseFloat(this.form.acido_urico)
-            : null,
-          potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
-        };
-
+        const payload = this.prepararPayload();
         const res = await pacienteService.guardar(payload);
-        if (res && res.id) {
+        if (res?.id) {
           this.form.id = res.id;
-          if (this.modoEdicion) this.bloqueoEdicion = false;
-          if (!silencioso) {
-            this.resultadoIA = null;
-            this.mensajeRiesgo = "";
-            this.modalExito = true;
-          }
+          this.bloqueoEdicion = false;
+          this.modalExito = true;
         }
       } catch (e) {
         console.error("Error al guardar:", e);
       }
     },
-
-    async siguiente() {
-      const esValido = this.$refs.form.validate();
-      if (!esValido && this.paso < 4) return;
-      if (this.paso < 4) {
-        this.paso++;
-      } else {
-        this.modalConfirmacion = true;
-      }
-    },
-
-    manejarAtras() {
-      this.paso > 1 ? this.paso-- : this.$emit("atras");
-    },
-
-    cerrarModal() {
-      this.modalExito = false;
-      this.resultadoIA = null;
-      if (this.paso === 4) this.$emit("finalizar", this.form);
-    },
-
-    verDetalles() {
-      // Lógica para mostrar detalles técnicos o navegar a otra vista
-      console.log("Mostrando detalles de:", this.resultadoIA);
-      this.$emit("ver-detalles", this.resultadoIA);
-    },
-
     async predecir() {
       try {
-        this.resultadoIA = null;
-        const mapaRespuestas = (valor) => {
-          if (valor === "S") return 1.0;
-          if (valor === "N") return 2.0;
-          if (valor === "X") return 9.0;
-          if (valor === "P") return 3.0;
-          return null;
-        };
-
-        const payload = {
-          genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
-          edad: this.form.edad ? parseInt(this.form.edad) : null,
-          fumo_100_cigarrillos: mapaRespuestas(this.form.fumador),
-          consumo_alcohol_ultimo_año: this.form.alcohol,
-          actividad_deportiva_moderada_x_semana: this.form.ejercicio,
-          anhedonia: this.form.anhedonia,
-          riñones_debiles_fallando: mapaRespuestas(this.form.renales),
-          diabetes: mapaRespuestas(this.form.diabetico),
-          hipertension: mapaRespuestas(this.form.hipertension),
-          asma: mapaRespuestas(this.form.asma),
-          fam_cardio: mapaRespuestas(this.form.fam_cardio),
-          fam_diabetes: mapaRespuestas(this.form.fam_diabetes),
-          fam_asma: mapaRespuestas(this.form.fam_asma),
-          altura: this.form.altura ? parseFloat(this.form.altura) : null,
-          peso: this.form.peso ? parseFloat(this.form.peso) : null,
-          presion_sistolica_final: this.form.presion_sis
-            ? parseFloat(this.form.presion_sis)
-            : null,
-          presion_diastolica_final: this.form.presion_dis
-            ? parseFloat(this.form.presion_dis)
-            : null,
-          creatinina: this.form.creatinina
-            ? parseFloat(this.form.creatinina)
-            : null,
-          colesterol_total: this.form.colesterol
-            ? parseFloat(this.form.colesterol)
-            : null,
-          hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
-          trigliceridos: this.form.trigliceridos
-            ? parseFloat(this.form.trigliceridos)
-            : null,
-          proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
-          hemoglobina: this.form.hemoglobina
-            ? parseFloat(this.form.hemoglobina)
-            : null,
-          acido_urico: this.form.acido_urico
-            ? parseFloat(this.form.acido_urico)
-            : null,
-          potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
-        };
-
-        const res = await pacienteService.predecirAlVuelo(payload);
+        const res = await pacienteService.predecirAlVuelo(
+          this.prepararPayload()
+        );
         this.resultadoIA = res;
         this.modalExito = true;
       } catch (e) {
-        alert("No se pudo realizar la predicción. Revisa los datos.");
+        alert("Error en predicción.");
       }
     },
-
+    prepararPayload() {
+      const mapa = (v) => ({ S: 1.0, N: 2.0, X: 9.0, P: 3.0 }[v] || null);
+      return {
+        ...this.form,
+        genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
+        edad: parseInt(this.form.edad),
+        fumo_100_cigarrillos: mapa(this.form.fumador),
+        riñones_debiles_fallando: mapa(this.form.renales),
+        diabetes: mapa(this.form.diabetico),
+        hipertension: mapa(this.form.hipertension),
+        asma: mapa(this.form.asma),
+        fam_cardio: mapa(this.form.fam_cardio),
+        fam_diabetes: mapa(this.form.fam_diabetes),
+        fam_asma: mapa(this.form.fam_asma),
+        altura: parseFloat(this.form.altura),
+        peso: parseFloat(this.form.peso),
+        presion_sistolica_final: parseFloat(this.form.presion_sis),
+        presion_diastolica_final: parseFloat(this.form.presion_dis),
+        colesterol_total: parseFloat(this.form.colesterol),
+        hdl: parseFloat(this.form.hdl),
+        trigliceridos: parseFloat(this.form.trigliceridos),
+        creatinina: parseFloat(this.form.creatinina),
+        proteina_c: parseFloat(this.form.pcr),
+        hemoglobina: parseFloat(this.form.hemoglobina),
+        acido_urico: parseFloat(this.form.acido_urico),
+        potasio: parseFloat(this.form.potasio),
+      };
+    },
+    siguiente() {
+      if (!this.$refs.form.validate()) return;
+      if (this.paso < 4) this.paso++;
+    },
+    manejarAtras() {
+      this.paso > 1 ? this.paso-- : this.$emit("atras");
+    },
+    cerrarModal() {
+      this.modalExito = false;
+      // Si estamos en el último paso y cerramos después de guardar, emitimos finalizar
+      if (this.paso === 4 && !this.bloqueoEdicion)
+        this.$emit("finalizar", this.form);
+    },
     inicializarForm() {
       return {
         id: null,
@@ -827,32 +687,18 @@ export default {
   font-weight: 300;
   margin-bottom: 4px;
 }
-
-.v-text-field--solo >>> .v-input__control,
-.v-select >>> .v-input__control {
-  min-height: 40px !important;
-  border-radius: 4px;
-}
-
 .custom-btn {
   height: 42px !important;
   font-size: 0.75rem;
   font-weight: bold;
 }
-
 .border-grey {
   border: 1px solid #4a4a4a !important;
 }
-
 .input-bloqueado {
   opacity: 0.5 !important;
   pointer-events: none;
   filter: grayscale(1);
   transition: all 0.3s ease;
-}
-
-.input-bloqueado >>> .v-select__selection,
-.input-bloqueado >>> .v-icon {
-  color: rgba(255, 255, 255, 0.5) !important;
 }
 </style>

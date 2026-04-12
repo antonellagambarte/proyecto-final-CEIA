@@ -15,8 +15,7 @@ export default {
   },
   methods: {
     guardarNuevoPaciente() {
-      alert("Paciente creado con éxito");
-      this.$router.push("/");
+      // this.$router.push("/");
     },
   },
 };
