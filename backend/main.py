@@ -32,7 +32,7 @@ def get_db():
 def home():
     return {"message": "Backend CardioPredict activo con SQLite"}
 
-@app.post("/pacientes/predecir")
+@app.post("/pacientes/predecir", summary="Predecir riesgo")
 def predecir_al_vuelo(datos: dict):
     try:
         datos_ia = {k: v for k, v in datos.items() if k not in ["fecha_creacion", "fecha_actualizacion", "id"]}
