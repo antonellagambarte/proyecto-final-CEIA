@@ -44,7 +44,7 @@
         <v-icon
           :color="
             resultadoIA
-              ? resultadoIA.probabilidad > 0.4
+              ? resultadoIA.riesgo === 'Alto'
                 ? 'error'
                 : 'success'
               : 'success'
@@ -62,14 +62,14 @@
             v-if="resultadoIA"
             class="mt-2 pa-4 rounded-lg"
             :class="
-              resultadoIA.probabilidad > 0.4 ? 'red darken-4' : 'green darken-4'
+              resultadoIA.riesgo === 'Alto' ? 'red darken-4' : 'green darken-4'
             "
           >
             <div class="white--text text-overline mb-1">
-              Probabilidad de riesgo
+              Probabilidad de riesgo (Etapa {{ resultadoIA.etapa_aplicada }})
             </div>
             <div class="white--text text-h4 font-weight-black">
-              RIESGO {{ resultadoIA.probabilidad > 0.4 ? "ALTO" : "BAJO" }}
+              RIESGO {{ resultadoIA.riesgo.toUpperCase() }}
             </div>
           </div>
           <div v-else>Los datos han sido sincronizados correctamente.</div>
@@ -81,17 +81,14 @@
             color="info"
             class="px-6 custom-btn"
             @click="irADetallePrediccion"
+            >VER DETALLE</v-btn
           >
-            VER DETALLE
-          </v-btn>
-
           <v-btn
             color="success"
             class="px-10 custom-btn ml-2"
             @click="cerrarModal"
+            >ACEPTAR</v-btn
           >
-            ACEPTAR
-          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -355,7 +352,6 @@
         >
           <v-icon left small>fas fa-history</v-icon> VER HISTORIAL
         </v-btn>
-
         <v-btn
           v-if="mostrarBotonGuardar"
           color="success"
@@ -365,7 +361,6 @@
         >
           <v-icon left small>fas fa-save</v-icon> GUARDAR DATOS
         </v-btn>
-
         <v-btn
           v-if="paso >= 3"
           color="success"
@@ -375,7 +370,6 @@
           <v-icon left small>fas fa-chart-line</v-icon> PREDICCIÓN
           {{ paso === 3 ? "PRELIMINAR" : "FINAL" }}
         </v-btn>
-
         <v-btn
           v-if="paso < 4"
           color="#635b5b"
@@ -531,6 +525,8 @@ export default {
     datosIniciales: {
       handler(newVal) {
         if (newVal && Object.keys(newVal).length > 0) {
+          console.log("NUEVO VALOR: ", newVal);
+
           this.form = { ...this.form, ...newVal };
           this.camposPersistidos = Object.keys(newVal).filter(
             (k) => newVal[k] !== null && newVal[k] !== "" && k !== "id"
@@ -546,28 +542,18 @@ export default {
       return this.camposPersistidos.includes(campo);
     },
     async guardarCambios() {
-      if (!this.$refs.form.validate()) return;
-      this.modalConfirmacion = true;
+      if (this.$refs.form.validate()) this.modalConfirmacion = true;
     },
     async confirmarGuardado() {
       this.modalConfirmacion = false;
       try {
-        const payload = this.prepararPayload();
-        const res = await pacienteService.guardar(payload);
+        const res = await pacienteService.guardar(this.prepararPayload());
         if (res?.id) {
           this.form.id = res.id;
-          const camposConDatos = Object.keys(this.form).filter(
-            (k) => this.form[k] !== null && this.form[k] !== "" && k !== "id"
-          );
-          this.camposPersistidos = [
-            ...new Set([...this.camposPersistidos, ...camposConDatos]),
-          ];
-          this.bloqueoEdicion = true;
-          this.resultadoIA = null;
           this.modalExito = true;
         }
       } catch (e) {
-        console.error("Error al guardar:", e);
+        console.error(e);
       }
     },
     async predecir() {
@@ -583,43 +569,80 @@ export default {
       }
     },
     prepararPayload() {
-      const mapa = (v) => ({ S: 1.0, N: 2.0, X: 9.0, P: 3.0 }[v] || null);
+      // Mapa de conversión estricta a Float para el modelo/backend
+      const mapa = (v) => {
+        if (v === "S") return 1.0;
+        if (v === "N") return 2.0;
+        if (v === "P") return 3.0; // Prediabetes
+        if (v === "X") return 9.0; // No sabe
+        return null;
+      };
+
       return {
-        ...this.form,
+        // Datos identificatorios
+        id: this.form.id,
+        dni: this.form.dni,
+        nombre: this.form.nombre,
+        apellido: this.form.apellido,
+
+        // Conversiones numéricas obligatorias
+        edad: parseInt(this.form.edad) || 0,
         genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
-        edad: parseInt(this.form.edad),
+
+        // Mapeo de selectores (String -> Float)
+        // Usamos las claves que espera tu backend según el JSON que pasaste
         fumo_100_cigarrillos: mapa(this.form.fumador),
         riñones_debiles_fallando: mapa(this.form.renales),
         diabetes: mapa(this.form.diabetico),
         hipertension: mapa(this.form.hipertension),
         asma: mapa(this.form.asma),
+
+        // Antecedentes familiares
         fam_cardio: mapa(this.form.fam_cardio),
         fam_diabetes: mapa(this.form.fam_diabetes),
         fam_asma: mapa(this.form.fam_asma),
-        altura: parseFloat(this.form.altura),
-        peso: parseFloat(this.form.peso),
-        presion_sistolica_final: parseFloat(this.form.presion_sis),
-        presion_diastolica_final: parseFloat(this.form.presion_dis),
-        colesterol_total: parseFloat(this.form.colesterol),
-        hdl: parseFloat(this.form.hdl),
-        trigliceridos: parseFloat(this.form.trigliceridos),
-        creatinina: parseFloat(this.form.creatinina),
-        proteina_c: parseFloat(this.form.pcr),
-        hemoglobina: parseFloat(this.form.hemoglobina),
-        acido_urico: parseFloat(this.form.acido_urico),
-        potasio: parseFloat(this.form.potasio),
+
+        // Estilo de vida (Ya son numéricos por las constantes OpcionesAlcohol/Anhedonia)
+        consumo_alcohol_ultimo_año: this.form.alcohol,
+        actividad_deportiva_moderada_x_semana: this.form.ejercicio,
+        anhedonia: this.form.anhedonia,
+
+        // Medidas físicas (Siempre Float)
+        altura: parseFloat(this.form.altura) || null,
+        peso: parseFloat(this.form.peso) || null,
+        presion_sistolica_final: parseFloat(this.form.presion_sis) || null,
+        presion_diastolica_final: parseFloat(this.form.presion_dis) || null,
+
+        // Laboratorio (Blindaje contra nulos o strings vacíos)
+        colesterol_total: this.form.colesterol
+          ? parseFloat(this.form.colesterol)
+          : null,
+        hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
+        trigliceridos: this.form.trigliceridos
+          ? parseFloat(this.form.trigliceridos)
+          : null,
+        creatinina: this.form.creatinina
+          ? parseFloat(this.form.creatinina)
+          : null,
+        proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
+        hemoglobina: this.form.hemoglobina
+          ? parseFloat(this.form.hemoglobina)
+          : null,
+        acido_urico: this.form.acido_urico
+          ? parseFloat(this.form.acido_urico)
+          : null,
+        potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
       };
     },
     siguiente() {
-      if (this.$refs.form.validate() && this.paso < 4) this.paso++;
+      if (this.$refs.form.validate()) this.paso++;
     },
     manejarAtras() {
       this.paso > 1 ? this.paso-- : this.$emit("atras");
     },
     cerrarModal() {
       this.modalExito = false;
-      if (this.paso === 4 && this.pasoLabGuardado)
-        this.$emit("finalizar", this.form);
+      if (this.paso === 4 && this.pasoLabGuardado) this.$emit("finalizar");
     },
     inicializarForm() {
       return {
@@ -679,11 +702,10 @@ export default {
         { text: "No sabe", value: OpcionesAnhedonia.NO_SABE },
       ];
     },
-  },
-
-  irADetallePrediccion() {
-    this.modalExito = false;
-    this.$router.push(`/historial/prediccion/${this.form.dni}`);
+    irADetallePrediccion() {
+      this.modalExito = false;
+      this.$router.push(`/historial/prediccion/${this.form.dni}`);
+    },
   },
 };
 </script>
@@ -707,5 +729,6 @@ export default {
   opacity: 0.7;
   filter: grayscale(0.4);
   pointer-events: none;
+  background-color: #333 !important;
 }
 </style>

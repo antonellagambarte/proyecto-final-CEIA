@@ -122,6 +122,7 @@ export default {
           genero: data.genero === 0 ? "Masculino" : "Femenino",
           diabetico: inversoMapa(data.diabetes),
           hipertension: inversoMapa(data.hipertension),
+          asma: inversoMapa(data.asma),
           renales: inversoMapa(data.riñones_debiles_fallando),
 
           alcohol: data.consumo_alcohol_ultimo_año,

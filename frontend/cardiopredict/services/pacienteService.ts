@@ -3,28 +3,21 @@ import { Paciente } from "~/types/paciente";
 const API_URL = "http://localhost:8000";
 
 export const pacienteService = {
-  async guardar(payload) {
+  async guardar(payload: any): Promise<Paciente> {
     try {
-      if (payload.id) {
-        // Si tiene ID, se usa PUT para actualizar
-        const response = await fetch(
-          `http://localhost:8000/pacientes/${payload.id}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        );
-        return await response.json();
-      } else {
-        // Si NO tiene ID, se usa POST para crear uno nuevo
-        const response = await fetch("http://localhost:8000/pacientes/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        return await response.json();
-      }
+      const isUpdate = !!payload.id;
+      const url = isUpdate
+        ? `${API_URL}/pacientes/${payload.id}`
+        : `${API_URL}/pacientes/`;
+
+      const response = await fetch(url, {
+        method: isUpdate ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Error al procesar la solicitud");
+      return await response.json();
     } catch (error) {
       console.error("Error en el service:", error);
       throw error;
@@ -32,11 +25,14 @@ export const pacienteService = {
   },
 
   async buscarPorDni(dni: string): Promise<Paciente[]> {
-    const response = await fetch(`${API_URL}/pacientes/buscar/${dni}`);
-
-    if (!response.ok) return [];
-
-    return await response.json();
+    try {
+      const response = await fetch(`${API_URL}/pacientes/buscar/${dni}`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error("Error buscando por DNI:", error);
+      return [];
+    }
   },
 
   async predecirAlVuelo(payload: any) {
@@ -54,7 +50,7 @@ export const pacienteService = {
     }
   },
 
-  async obtenerTodos(top = null) {
+  async obtenerTodos(top: number | null = null): Promise<Paciente[]> {
     try {
       const url = top
         ? `${API_URL}/pacientes/?top=${top}`

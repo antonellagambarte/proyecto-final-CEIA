@@ -2,9 +2,9 @@ export interface FormularioPaciente {
   dni: string;
   nombre: string;
   apellido: string;
-  sexo: string;
-  fuma: string;
-  presion_sistolica: number | null;
+  genero: string;
+  fumo_100_cigarrillos: string | null;
+  presion_sistolica_final: number | null;
   colesterol_total: number | null;
   creatinina: number | null;
 }
@@ -17,8 +17,10 @@ export interface Paciente {
   dni: string;
   edad: number | null;
 
-  // Estilo de vida
+  // Estilo de vida y Antecedentes
   diabetico: number | null;
+  hipertension: number | null;
+  asma: number | null;
   renales: number | null;
   alcohol: number | null;
   ejercicio: number | null;
@@ -42,4 +44,11 @@ export interface Paciente {
   hemoglobina: number | null;
   acido_urico: number | null;
   potasio: number | null;
+
+  // Campos de riesgo agregados
+  riesgo_preliminar?: number | null;
+  riesgo_final?: number | null;
+  probabilidad_riesgo?: number | null;
+  fecha_creacion?: string;
+  fecha_actualizacion?: string;
 }
