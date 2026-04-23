@@ -2,26 +2,27 @@ import os
 import pandas as pd
 import numpy as np
 import joblib
-from catboost import CatBoostClassifier
+from xgboost import XGBClassifier
 
 # --- SECCIÓN 1: Rutas y Configuración ---
 BASE_DIR = os.path.dirname(__file__)
-PATH_E1 = os.path.join(BASE_DIR, "modelos", "modelo_catboost_etapa1.joblib")
-PATH_E2 = os.path.join(BASE_DIR, "modelos", "modelo_catboost_etapa2.joblib")
+PATH_E1 = os.path.join(BASE_DIR, "modelos", "modelo_xgboot_etapa1.joblib")
+PATH_E2 = os.path.join(BASE_DIR, "modelos", "modelo_xgboot_etapa2.joblib")
 PATH_ENCODERS = os.path.join(BASE_DIR, "encoders", "encoders_categoricos.joblib")
 PATH_SCALER = os.path.join(BASE_DIR, "scalers", "scaler_cardio.joblib")
 
 # Lista de variables que requieren log1p según entrenamiento
 VARS_LOGARITMICAS = [
     'trigliceridos', 'colesterol_total', 'bmi', 'presion_sistolica_final', 
-    'presion_diastolica_final', 'glicohemoglobina', 'proteina_c',
-    'ancho_distribucion_globulos', 'hemoglobina', 'hdl', 'acido_urico',
-    'enzima_tgp', 'enzima_tgo', 'sodio', 'potasio'
+    'presion_diastolica_final', 'proteina_c', 'hemoglobina', 'hdl', 'acido_urico', 'potasio'
 ]
 
+UMBRAL_ETAPA1 = 0.491798
+UMBRAL_ETAPA2 = 0.473944
+
 # --- SECCIÓN 2: Carga de modelos ---
-modelo1 = CatBoostClassifier()
-modelo2 = CatBoostClassifier()
+modelo1 = None
+modelo2 = None
 encoders_dict = {}
 scaler = None
 
@@ -37,14 +38,8 @@ except Exception as e:
 # --- SECCIÓN 3: Columnas del Modelo ---
 COLUMNAS_MODELO_1 = [
     'edad', 'genero', 'fumo_100_cigarrillos', 'actividad_deportiva_moderada_x_semana',
-    'consumo_alcohol_ultimo_año_1.0', 'consumo_alcohol_ultimo_año_2.0', 'consumo_alcohol_ultimo_año_3.0',
-    'consumo_alcohol_ultimo_año_4.0', 'consumo_alcohol_ultimo_año_5.0', 'consumo_alcohol_ultimo_año_6.0',
-    'consumo_alcohol_ultimo_año_7.0', 'consumo_alcohol_ultimo_año_8.0', 'consumo_alcohol_ultimo_año_9.0',
-    'consumo_alcohol_ultimo_año_10.0', 'consumo_alcohol_ultimo_año_20.0', 'consumo_alcohol_ultimo_año_99.0',
-    'anhedonia_1.0', 'anhedonia_2.0', 'anhedonia_3.0', 'anhedonia_9.0',
-    'bmi', 'presion_sistolica_final', 'presion_diastolica_final', 'fam_cardio_2.0', 
-    'fam_diabetes_2.0', 'fam_asma_9.0', 'riñones_debiles_fallando_2.0',
-    'hipertension_2', 'diabetes_2.0'
+    'consumo_alcohol_ultimo_año', 'anhedonia', 'bmi', 'presion_sistolica_final', 'presion_diastolica_final', 'fam_cardio_2.0', 
+    'fam_diabetes_2.0', 'fam_asma_9.0', 'riñones_debiles_fallando_2.0', 'hipertension_2', 'diabetes_2.0'
 ]
 
 COLUMNAS_MODELO_2 = COLUMNAS_MODELO_1 + [
@@ -79,7 +74,12 @@ def ejecutar_prediccion(datos_dict, etapa=1):
             except Exception as e:
                 print(f"Aviso OHE: {col_nombre}: {e}")
 
-    columnas_entrenamiento = modelo.feature_names_
+    # Cambio para XGBoost: obtener nombres de columnas
+    try:
+        columnas_entrenamiento = modelo.get_booster().feature_names
+    except:
+        columnas_entrenamiento = getattr(modelo, "feature_names_in_", [])
+        
     df_ia = df.reindex(columns=columnas_entrenamiento).fillna(0)
     
     if scaler:

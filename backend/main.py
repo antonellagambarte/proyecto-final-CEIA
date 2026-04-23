@@ -5,7 +5,11 @@ import models
 import schemas
 from database import SessionLocal, engine
 import predictor 
-
+print("--- DEBUG PREDICTOR ---")
+print(f"Archivo cargado desde: {predictor.__file__}")
+print(f"¿Tiene UMBRAL_ETAPA1?: {'UMBRAL_ETAPA1' in dir(predictor)}")
+print(f"Atributos: {dir(predictor)}")
+print("-----------------------")
 # Crear las tablas en el archivo SQLite
 models.Base.metadata.create_all(bind=engine)
 
@@ -32,33 +36,45 @@ def get_db():
 def home():
     return {"message": "Backend CardioPredict activo con SQLite"}
 
-@app.post("/pacientes/predecir", summary="Predecir riesgo")
+@app.post("/pacientes/predecir")
 def predecir_al_vuelo(datos: dict):
     try:
         datos_ia = {k: v for k, v in datos.items() if k not in ["fecha_creacion", "fecha_actualizacion", "id"]}
-        etapa_a_usar = 2 if datos_ia.get("creatinina") else 1
+        
+        # Detección de etapa
+        es_etapa2 = datos_ia.get("creatinina") is not None and float(datos_ia.get("creatinina")) > 0
+        etapa_a_usar = 2 if es_etapa2 else 1
+        
         probabilidad = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_a_usar)
+        
+        # Aplicación de umbrales específicos
+        umbral = predictor.UMBRAL_ETAPA2 if etapa_a_usar == 2 else predictor.UMBRAL_ETAPA1
+        riesgo_label = "Alto" if probabilidad >= umbral else "Bajo"
         
         return {
             "probabilidad": probabilidad,
-            "riesgo": "Alto" if probabilidad > 0.4 else "Bajo", 
-            "etapa_aplicada": etapa_a_usar
+            "riesgo": riesgo_label, 
+            "etapa_aplicada": etapa_a_usar,
+            "umbral_aplicado": umbral
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Error al procesar la predicción")
+        raise HTTPException(status_code=500, detail=f"Error: {e}")
 
 @app.post("/pacientes/", response_model=schemas.Paciente)
 def guardar_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_db)):
-    """
-    Confirmación: Guarda al paciente en el archivo .db e incluye el score.
-    """
     datos_dict = paciente.model_dump()
-    
     datos_ia = {k: v for k, v in datos_dict.items() if k not in ["fecha_creacion", "fecha_actualizacion", "id"]}
-    etapa = 2 if datos_ia.get("creatinina") is not None else 1
+    
+    etapa = 2 if datos_ia.get("creatinina") else 1
     score_ia = predictor.ejecutar_prediccion(datos_ia, etapa=etapa)
 
     nuevo_paciente = models.Paciente(**datos_dict)
+    
+    if etapa == 1:
+        nuevo_paciente.riesgo_preliminar = score_ia
+    else:
+        nuevo_paciente.riesgo_final = score_ia
+    
     nuevo_paciente.probabilidad_riesgo = score_ia
     
     try:
@@ -77,23 +93,25 @@ def buscar_pacientes_por_dni(dni_parcial: str, db: Session = Depends(get_db)):
 
 @app.put("/pacientes/{paciente_id}", response_model=schemas.Paciente)
 def actualizar_paciente(paciente_id: int, datos_actualizados: schemas.PacienteCreate, db: Session = Depends(get_db)):
-    """
-    Actualiza los datos de un paciente existente y recalcula el riesgo automáticamente.
-    """
     paciente_db = db.query(models.Paciente).filter(models.Paciente.id == paciente_id).first()
     if not paciente_db:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
 
     datos_dict = datos_actualizados.model_dump()
-
     datos_ia = {k: v for k, v in datos_dict.items() if k not in ["fecha_creacion", "fecha_actualizacion", "id"]}
-    etapa = 2 if datos_ia.get("creatinina") is not None else 1
+    
+    etapa = 2 if datos_ia.get("creatinina") else 1
     nuevo_score_ia = predictor.ejecutar_prediccion(datos_ia, etapa=etapa)
-
 
     for key, value in datos_dict.items():
         if key not in ["fecha_creacion", "id"]:
             setattr(paciente_db, key, value)
+    
+
+    if etapa == 1:
+        paciente_db.riesgo_preliminar = nuevo_score_ia
+    else:
+        paciente_db.riesgo_final = nuevo_score_ia
     
     paciente_db.probabilidad_riesgo = nuevo_score_ia
 

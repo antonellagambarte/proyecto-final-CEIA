@@ -25,6 +25,7 @@ class PacienteBase(BaseModel):
     riñones_debiles_fallando: Optional[float] = None
     hipertension: Optional[float] = None
     diabetes: Optional[float] = None
+    asma: Optional[float] = None
     colesterol_total: Optional[float] = None
     hdl: Optional[float] = None
     trigliceridos: Optional[float] = None
@@ -39,6 +40,8 @@ class PacienteCreate(PacienteBase):
 
 class Paciente(PacienteBase):
     id: int
+    riesgo_preliminar: Optional[float] = None
+    riesgo_final: Optional[float] = None
     probabilidad_riesgo: Optional[float] = None
 
     class Config:

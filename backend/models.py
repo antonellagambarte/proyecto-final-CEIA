@@ -36,6 +36,7 @@ class Paciente(Base):
     riñones_debiles_fallando = Column(Float)
     hipertension = Column(Float)
     diabetes = Column(Float)
+    asma = Column(Float)
     
     # Valores de Laboratorio
     colesterol_total = Column(Float)
@@ -48,4 +49,6 @@ class Paciente(Base):
     potasio = Column(Float)
 
     # Para guardar el resultado final de la IA
+    riesgo_preliminar = Column(Float, nullable=True) 
+    riesgo_final = Column(Float, nullable=True)     
     probabilidad_riesgo = Column(Float, nullable=True)
