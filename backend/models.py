@@ -1,22 +1,27 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from database import Base
 
 class Paciente(Base):
     __tablename__ = "pacientes"
-
-    # Identificación única en la base de datos
     id = Column(Integer, primary_key=True, index=True)
-    
-    # Fechas
-    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
-    fecha_actualizacion = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Datos de identificación del paciente
-    dni = Column(String, unique=True, index=True)
+    dni = Column(String, unique=True, index=True) # El DNI es único para la persona
     nombre = Column(String)
     apellido = Column(String)
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
     
+    # Un paciente tiene muchas visitas
+    visitas = relationship("Visita", back_populates="paciente")
+
+class Visita(Base):
+    __tablename__ = "visitas"
+    id = Column(Integer, primary_key=True, index=True)
+    paciente_id = Column(Integer, ForeignKey("pacientes.id"))
+    fecha_visita = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_actualizacion = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Movemos todos los datos clínicos aquí
     edad = Column(Float)
     genero = Column(Float) 
     fumo_100_cigarrillos = Column(Float) 
@@ -29,7 +34,6 @@ class Paciente(Base):
     presion_sistolica_final = Column(Float)
     presion_diastolica_final = Column(Float)
     
-    # Antecedentes
     fam_cardio = Column(Float)
     fam_diabetes = Column(Float)
     fam_asma = Column(Float)
@@ -38,7 +42,6 @@ class Paciente(Base):
     diabetes = Column(Float)
     asma = Column(Float)
     
-    # Valores de Laboratorio
     colesterol_total = Column(Float)
     hdl = Column(Float)
     trigliceridos = Column(Float)
@@ -48,7 +51,8 @@ class Paciente(Base):
     acido_urico = Column(Float)
     potasio = Column(Float)
 
-    # Para guardar el resultado final de la IA
     riesgo_preliminar = Column(Float, nullable=True) 
     riesgo_final = Column(Float, nullable=True)     
     probabilidad_riesgo = Column(Float, nullable=True)
+
+    paciente = relationship("Paciente", back_populates="visitas")

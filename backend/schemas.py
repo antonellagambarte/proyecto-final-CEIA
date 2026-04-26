@@ -1,13 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
-class PacienteBase(BaseModel):
-    dni: str
-    fecha_creacion: Optional[datetime] = None
-    fecha_actualizacion: Optional[datetime] = None
-    nombre: str
-    apellido: str
+class VisitaBase(BaseModel):
     edad: Optional[float] = None
     genero: Optional[float] = None 
     fumo_100_cigarrillos: Optional[float] = None
@@ -35,14 +30,32 @@ class PacienteBase(BaseModel):
     acido_urico: Optional[float] = None
     potasio: Optional[float] = None
 
-class PacienteCreate(PacienteBase):
-    pass
-
-class Paciente(PacienteBase):
+# 2. Esquema para la tabla de Visitas
+class Visita(VisitaBase):
     id: int
+    paciente_id: int
+    fecha_visita: Optional[datetime] = None
+    fecha_actualizacion: Optional[datetime] = None
     riesgo_preliminar: Optional[float] = None
     riesgo_final: Optional[float] = None
     probabilidad_riesgo: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+class PacienteCreate(VisitaBase):
+    dni: str
+    nombre: str
+    apellido: str
+
+
+class Paciente(BaseModel):
+    id: int
+    dni: str
+    nombre: str
+    apellido: str
+    fecha_creacion: Optional[datetime] = None
+    visitas: List[Visita] = [] 
 
     class Config:
         from_attributes = True
