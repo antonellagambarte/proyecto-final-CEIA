@@ -3,15 +3,23 @@ import { Paciente } from "~/types/paciente";
 const API_URL = "http://localhost:8000";
 
 export const pacienteService = {
-  async guardar(payload: any): Promise<Paciente> {
+  // Ahora "guardar" siempre hace POST porque cada consulta es una nueva Visita
+  // En tu pacienteService.ts
+
+  async guardar(
+    payload: any,
+    visitaId: number | null = null
+  ): Promise<Paciente> {
     try {
-      const isUpdate = !!payload.id;
-      const url = isUpdate
-        ? `${API_URL}/pacientes/${payload.id}`
+      // Si viene un visitaId, usamos PUT para actualizar la visita existente
+      const url = visitaId
+        ? `${API_URL}/visitas/${visitaId}`
         : `${API_URL}/pacientes/`;
 
+      const method = visitaId ? "PUT" : "POST";
+
       const response = await fetch(url, {
-        method: isUpdate ? "PUT" : "POST",
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -28,9 +36,23 @@ export const pacienteService = {
     try {
       const response = await fetch(`${API_URL}/pacientes/buscar/${dni}`);
       if (!response.ok) return [];
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error("Error buscando por DNI:", error);
+      return [];
+    }
+  },
+
+  async obtenerVisitas(pacienteId: number) {
+    try {
+      const response = await fetch(
+        `${API_URL}/pacientes/${pacienteId}/visitas`
+      );
+      if (!response.ok) throw new Error("Error al obtener visitas");
+      return await response.json();
+    } catch (error) {
+      console.error("Error en obtenerVisitas:", error);
       return [];
     }
   },
@@ -62,5 +84,9 @@ export const pacienteService = {
       console.error("Error obteniendo pacientes:", error);
       return [];
     }
+  },
+
+  actualizarVisita(visitaId, datos) {
+    return axios.put(`/visitas/${visitaId}`, datos);
   },
 };

@@ -1,54 +1,58 @@
-export interface FormularioPaciente {
-  dni: string;
-  nombre: string;
-  apellido: string;
-  genero: string;
-  fumo_100_cigarrillos: string | null;
-  presion_sistolica_final: number | null;
-  colesterol_total: number | null;
-  creatinina: number | null;
-}
+export interface Visita {
+  id: number;
+  paciente_id: number;
+  fecha_visita: string;
 
-export interface Paciente {
-  id?: number;
-  apellido: string;
-  nombre: string;
-  genero: "Masculino" | "Femenino";
-  dni: string;
+  // Datos clínicos de la consulta
   edad: number | null;
-
-  // Estilo de vida y Antecedentes
-  diabetico: number | null;
-  hipertension: number | null;
-  asma: number | null;
-  renales: number | null;
-  alcohol: number | null;
-  ejercicio: number | null;
-  fumador: string | null;
+  genero: number | null;
+  fumo_100_cigarrillos: number | null;
+  consumo_alcohol_ultimo_año: number | null;
+  actividad_deportiva_moderada_x_semana: number | null;
   anhedonia: number | null;
-
-  fam_cardio: string | null;
-  fam_diabetes: string | null;
-  fam_asma: string | null;
-
-  // Datos físicos y laboratorio
-  altura: number | null;
   peso: number | null;
-  presion_sis: number | null;
-  presion_dis: number | null;
+  altura: number | null;
+  bmi: number | null;
+  presion_sistolica_final: number | null;
+  presion_diastolica_final: number | null;
+
+  // Antecedentes y laboratorio
+  fam_cardio: number | null;
+  fam_diabetes: number | null;
+  fam_asma: number | null;
+  riñones_debiles_fallando: number | null;
+  hipertension: number | null;
+  diabetes: number | null;
+  asma: number | null;
+
+  colesterol_total: number | null;
   hdl: number | null;
   trigliceridos: number | null;
-  colesterol: number | null;
-  creatinina: number | null;
-  pcr: number | null;
+  proteina_c: number | null;
   hemoglobina: number | null;
+  creatinina: number | null;
   acido_urico: number | null;
   potasio: number | null;
 
-  // Campos de riesgo agregados
+  // Resultados de la IA
   riesgo_preliminar?: number | null;
   riesgo_final?: number | null;
   probabilidad_riesgo?: number | null;
+}
+
+export interface Paciente {
+  id: number;
+  dni: string;
+  nombre: string;
+  apellido: string;
   fecha_creacion?: string;
-  fecha_actualizacion?: string;
+  // Un paciente ahora tiene una lista de visitas
+  visitas: Visita[];
+}
+
+// Mantenemos esta para el tipado del formulario de entrada
+export interface FormularioPaciente extends Partial<Visita> {
+  dni: string;
+  nombre: string;
+  apellido: string;
 }

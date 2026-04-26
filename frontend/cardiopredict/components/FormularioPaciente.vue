@@ -461,6 +461,7 @@ export default {
           ],
         },
       ],
+      visitaIdActual: null,
     };
   },
   computed: {
@@ -522,12 +523,36 @@ export default {
     ];
   },
   watch: {
+    async "form.dni"(newDni) {
+      if (newDni && newDni.length >= 7) {
+        try {
+          const resultados = await pacienteService.buscarPorDni(newDni);
+          const pacienteExistente = resultados.find((p) => p.dni === newDni);
+
+          if (pacienteExistente) {
+            this.form.nombre = pacienteExistente.nombre;
+            this.form.apellido = pacienteExistente.apellido;
+            this.form.genero =
+              pacienteExistente.genero === 0 ? "Masculino" : "Femenino";
+
+            if (!this.camposPersistidos.includes("nombre"))
+              this.camposPersistidos.push("nombre");
+            if (!this.camposPersistidos.includes("apellido"))
+              this.camposPersistidos.push("apellido");
+            if (!this.camposPersistidos.includes("genero"))
+              this.camposPersistidos.push("genero");
+          }
+        } catch (e) {
+          console.error("Error validando paciente existente:", e);
+        }
+      }
+    },
+
     datosIniciales: {
       handler(newVal) {
         if (newVal && Object.keys(newVal).length > 0) {
-          console.log("NUEVO VALOR: ", newVal);
-
           this.form = { ...this.form, ...newVal };
+          this.visitaIdActual = newVal.id; // <--- Capturamos el ID de la visita
           this.camposPersistidos = Object.keys(newVal).filter(
             (k) => newVal[k] !== null && newVal[k] !== "" && k !== "id"
           );
@@ -537,25 +562,48 @@ export default {
       deep: true,
     },
   },
+
   methods: {
     esCampoBloqueado(campo) {
       return this.camposPersistidos.includes(campo);
     },
+
     async guardarCambios() {
       if (this.$refs.form.validate()) this.modalConfirmacion = true;
     },
+
     async confirmarGuardado() {
       this.modalConfirmacion = false;
       try {
-        const res = await pacienteService.guardar(this.prepararPayload());
-        if (res?.id) {
-          this.form.id = res.id;
+        // 1. Identificamos si estamos editando algo existente
+        const idAEditar =
+          this.visitaIdActual ||
+          (this.datosIniciales ? this.datosIniciales.id : null);
+
+        const res = await pacienteService.guardar(
+          this.prepararPayload(),
+          idAEditar
+        );
+
+        if (res) {
+          // 2. Mantenemos el ID de la visita vivo para el siguiente clic en "Guardar"
+          if (idAEditar) {
+            // Si ya teníamos un ID, lo mantenemos (porque acabamos de hacer un PUT exitoso)
+            this.visitaIdActual = idAEditar;
+          } else if (res.visitas && res.visitas.length > 0) {
+            // Si fue un POST nuevo, el backend devuelve el paciente.
+            // Tomamos el ID de la última visita creada para que el próximo clic sea un PUT.
+            const ultimaVisita = res.visitas[res.visitas.length - 1];
+            this.visitaIdActual = ultimaVisita.id;
+          }
+
           this.modalExito = true;
         }
       } catch (e) {
-        console.error(e);
+        console.error("Error al guardar:", e);
       }
     },
+
     async predecir() {
       if (!this.$refs.form.validate()) return;
       try {
@@ -568,82 +616,66 @@ export default {
         console.error(e);
       }
     },
+
     prepararPayload() {
-      // Mapa de conversión estricta a Float para el modelo/backend
       const mapa = (v) => {
         if (v === "S") return 1.0;
         if (v === "N") return 2.0;
-        if (v === "P") return 3.0; // Prediabetes
-        if (v === "X") return 9.0; // No sabe
+        if (v === "P") return 3.0;
+        if (v === "X") return 9.0;
         return null;
       };
 
       return {
-        // Datos identificatorios
-        id: this.form.id,
+        // Datos fijos del Paciente
         dni: this.form.dni,
         nombre: this.form.nombre,
         apellido: this.form.apellido,
 
-        // Conversiones numéricas obligatorias
+        // Datos de la Visita (Clínicos)
         edad: parseInt(this.form.edad) || 0,
         genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
-
-        // Mapeo de selectores (String -> Float)
-        // Usamos las claves que espera tu backend según el JSON que pasaste
         fumo_100_cigarrillos: mapa(this.form.fumador),
         riñones_debiles_fallando: mapa(this.form.renales),
         diabetes: mapa(this.form.diabetico),
         hipertension: mapa(this.form.hipertension),
         asma: mapa(this.form.asma),
-
-        // Antecedentes familiares
         fam_cardio: mapa(this.form.fam_cardio),
         fam_diabetes: mapa(this.form.fam_diabetes),
         fam_asma: mapa(this.form.fam_asma),
-
-        // Estilo de vida (Ya son numéricos por las constantes OpcionesAlcohol/Anhedonia)
         consumo_alcohol_ultimo_año: this.form.alcohol,
         actividad_deportiva_moderada_x_semana: this.form.ejercicio,
         anhedonia: this.form.anhedonia,
-
-        // Medidas físicas (Siempre Float)
         altura: parseFloat(this.form.altura) || null,
         peso: parseFloat(this.form.peso) || null,
         presion_sistolica_final: parseFloat(this.form.presion_sis) || null,
         presion_diastolica_final: parseFloat(this.form.presion_dis) || null,
 
-        // Laboratorio (Blindaje contra nulos o strings vacíos)
-        colesterol_total: this.form.colesterol
-          ? parseFloat(this.form.colesterol)
-          : null,
-        hdl: this.form.hdl ? parseFloat(this.form.hdl) : null,
-        trigliceridos: this.form.trigliceridos
-          ? parseFloat(this.form.trigliceridos)
-          : null,
-        creatinina: this.form.creatinina
-          ? parseFloat(this.form.creatinina)
-          : null,
-        proteina_c: this.form.pcr ? parseFloat(this.form.pcr) : null,
-        hemoglobina: this.form.hemoglobina
-          ? parseFloat(this.form.hemoglobina)
-          : null,
-        acido_urico: this.form.acido_urico
-          ? parseFloat(this.form.acido_urico)
-          : null,
-        potasio: this.form.potasio ? parseFloat(this.form.potasio) : null,
+        // Laboratorio
+        colesterol_total: parseFloat(this.form.colesterol) || null,
+        hdl: parseFloat(this.form.hdl) || null,
+        trigliceridos: parseFloat(this.form.trigliceridos) || null,
+        creatinina: parseFloat(this.form.creatinina) || null,
+        proteina_c: parseFloat(this.form.pcr) || null,
+        hemoglobina: parseFloat(this.form.hemoglobina) || null,
+        acido_urico: parseFloat(this.form.acido_urico) || null,
+        potasio: parseFloat(this.form.potasio) || null,
       };
     },
+
     siguiente() {
       if (this.$refs.form.validate()) this.paso++;
     },
+
     manejarAtras() {
       this.paso > 1 ? this.paso-- : this.$emit("atras");
     },
+
     cerrarModal() {
       this.modalExito = false;
       if (this.paso === 4 && this.pasoLabGuardado) this.$emit("finalizar");
     },
+
     inicializarForm() {
       return {
         id: null,
@@ -677,6 +709,7 @@ export default {
         potasio: null,
       };
     },
+
     getAlcoholOptions() {
       return [
         { text: "Nunca", value: OpcionesAlcohol.NUNCA },
@@ -693,6 +726,7 @@ export default {
         { text: "No sabe", value: OpcionesAlcohol.NO_SABE },
       ];
     },
+
     getAnhedoniaOptions() {
       return [
         { text: "Para nada", value: OpcionesAnhedonia.NADA },
@@ -702,8 +736,10 @@ export default {
         { text: "No sabe", value: OpcionesAnhedonia.NO_SABE },
       ];
     },
+
     irADetallePrediccion() {
       this.modalExito = false;
+      // Navega al análisis comparativo enviando el DNI
       this.$router.push(`/historial/prediccion/${this.form.dni}`);
     },
   },

@@ -69,7 +69,7 @@
             color="#635b5b"
             class="white--text custom-btn"
             small
-            :to="`/historial/datos?dni=${item.dni}`"
+            :to="`/historial/datos?dni=${item.dni}&visitaId=${item.id}`"
           >
             VER DATOS
           </v-btn>
@@ -107,7 +107,10 @@ export default {
       this.loading = true;
       try {
         const res = await pacienteService.buscarPorDni(this.dni);
-        const dataArray = Array.isArray(res) ? res : [res];
+        // 1. Obtenemos el objeto paciente (el primero si es un array)
+        const pacienteData = Array.isArray(res) ? res[0] : res;
+
+        if (!pacienteData) return;
 
         const inversoMapa = (v) => {
           if (v === 1.0) return "S";
@@ -117,52 +120,66 @@ export default {
           return null;
         };
 
-        this.historial = dataArray.map((data) => ({
-          ...data,
-          genero: data.genero === 0 ? "Masculino" : "Femenino",
-          diabetico: inversoMapa(data.diabetes),
-          hipertension: inversoMapa(data.hipertension),
-          asma: inversoMapa(data.asma),
-          renales: inversoMapa(data.riñones_debiles_fallando),
+        // 2. Mapeamos las VISITAS del paciente, no el paciente en sí
+        this.historial = pacienteData.visitas.map((v) => ({
+          // Mantenemos los datos del paciente para que los botones de VER DATOS funcionen
+          dni: pacienteData.dni,
+          nombre: pacienteData.nombre,
+          apellido: pacienteData.apellido,
 
-          alcohol: data.consumo_alcohol_ultimo_año,
-          ejercicio: data.actividad_deportiva_moderada_x_semana,
-          fumador: inversoMapa(data.fumo_100_cigarrillos),
-          anhedonia: data.anhedonia,
+          // Datos de la visita (ID, campos clínicos y FECHAS)
+          ...v,
+          genero: v.genero === 0 ? "Masculino" : "Femenino",
+          diabetico: inversoMapa(v.diabetes),
+          hipertension: inversoMapa(v.hipertension),
+          asma: inversoMapa(v.asma),
+          renales: inversoMapa(v.riñones_debiles_fallando),
 
-          fam_cardio: inversoMapa(data.fam_cardio),
-          fam_diabetes: inversoMapa(data.fam_diabetes),
-          fam_asma: inversoMapa(data.fam_asma),
+          alcohol: v.consumo_alcohol_ultimo_año,
+          ejercicio: v.actividad_deportiva_moderada_x_semana,
+          fumador: inversoMapa(v.fumo_100_cigarrillos),
+          anhedonia: v.anhedonia,
 
-          presion_sis: data.presion_sistolica_final,
-          presion_dis: data.presion_diastolica_final,
-          colesterol: data.colesterol_total,
-          pcr: data.proteina_c,
-          fecha_creacion: data.fecha_creacion,
-          fecha_actualizacion: data.fecha_actualizacion,
+          fam_cardio: inversoMapa(v.fam_cardio),
+          fam_diabetes: inversoMapa(v.fam_diabetes),
+          fam_asma: inversoMapa(v.fam_asma),
+
+          presion_sis: v.presion_sistolica_final,
+          presion_dis: v.presion_diastolica_final,
+          colesterol: v.colesterol_total,
+          pcr: v.proteina_c,
+
+          // IMPORTANTE: Ahora usamos las fechas de la VISITA
+          fecha_creacion: v.fecha_visita,
+          fecha_actualizacion: v.fecha_actualizacion,
         }));
 
+        // 3. Ordenar por fecha de creación de la visita (de más reciente a más antigua)
         if (this.historial.length > 0) {
           this.historial.sort(
             (a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
           );
+
+          // Seteamos el nombre del paciente para la cabecera
           this.paciente = {
-            apellido: this.historial[0].apellido,
-            nombre: this.historial[0].nombre,
+            apellido: pacienteData.apellido,
+            nombre: pacienteData.nombre,
           };
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error al cargar historial:", error);
       } finally {
         this.loading = false;
       }
     },
+
     obtenerEstado(item) {
       const completo = item.creatinina !== null && item.colesterol !== null;
       return completo
         ? { texto: "COMPLETO", color: "success" }
         : { texto: "PARCIAL", color: "warning" };
     },
+
     formatearFecha(fecha) {
       if (!fecha) return "-";
       const d = new Date(fecha);
@@ -172,15 +189,18 @@ export default {
         year: "numeric",
       });
     },
+
     irADetalle(item) {
       this.pacienteSeleccionado = item;
       this.verDetalleForm = true;
     },
+
     verPrediccion(item) {
       const riesgo = (item.probabilidad_riesgo * 100).toFixed(2);
       alert(`Riesgo Cardiovascular calculado: ${riesgo}%`);
     },
   },
+
   async mounted() {
     await this.cargarPaciente();
   },

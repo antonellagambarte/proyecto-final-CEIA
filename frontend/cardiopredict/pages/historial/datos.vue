@@ -240,6 +240,16 @@
               </v-col>
             </v-row>
           </section>
+          <div class="d-flex justify-center pt-6">
+            <v-btn
+              color="primary"
+              x-large
+              :to="{ path: '/historial/analisis', query: { dni: pacienteDni } }"
+            >
+              <v-icon left>fas fa-chart-pie</v-icon>
+              Ver Análisis de Riesgo e Influencias
+            </v-btn>
+          </div>
         </div>
       </v-sheet>
     </v-container>
@@ -309,16 +319,33 @@ export default {
       this.cargando = true;
       try {
         const res = await pacienteService.buscarPorDni(dni);
-        this.paciente = Array.isArray(res) ? res[0] : res;
+        const p = Array.isArray(res) ? res[0] : res;
+
+        if (p && p.visitas && p.visitas.length > 0) {
+          // 1. Intentamos obtener el ID de la visita desde la URL (si es que lo pasas por query)
+          const visitaIdDeUrl = this.$route.query.visitaId;
+
+          let visitaSeleccionada;
+
+          if (visitaIdDeUrl) {
+            visitaSeleccionada = p.visitas.find((v) => v.id == visitaIdDeUrl);
+          }
+
+          if (!visitaSeleccionada) {
+            visitaSeleccionada = p.visitas[p.visitas.length - 1];
+          }
+
+          this.paciente = { ...p, ...visitaSeleccionada };
+        } else {
+          this.paciente = p;
+        }
       } catch (e) {
-        console.error(e);
+        console.error("Error al cargar datos:", e);
       } finally {
         this.cargando = false;
       }
     },
     irAEditar() {
-      // MAPEAMOS LOS DATOS AL FORMATO QUE EL FORMULARIO ENTIENDE
-      // Según tu código anterior, el formulario espera 'S', 'N', etc.
       const mapeoValor = (v) => {
         if (v === 1.0) return "S";
         if (v === 2.0) return "N";
@@ -329,6 +356,7 @@ export default {
 
       this.datosParaFormulario = {
         ...this.paciente,
+        id: this.paciente.id,
         genero: this.paciente.genero === 0 ? "Masculino" : "Femenino",
         diabetico: mapeoValor(this.paciente.diabetes),
         asma: mapeoValor(this.paciente.asma),
