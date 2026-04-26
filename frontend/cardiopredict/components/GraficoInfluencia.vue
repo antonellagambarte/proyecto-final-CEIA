@@ -23,17 +23,6 @@
         <template v-slot:default="{ value }"> </template>
       </v-progress-linear>
     </div>
-
-    <div
-      class="mt-6 d-flex justify-space-between grey--text text--darken-1 text-caption italic"
-    >
-      <span
-        ><v-icon x-small color="cyan">fas fa-minus</v-icon> Reduce riesgo</span
-      >
-      <span
-        >Aumenta riesgo <v-icon x-small color="red">fas fa-plus</v-icon></span
-      >
-    </div>
   </v-card>
 </template>
 

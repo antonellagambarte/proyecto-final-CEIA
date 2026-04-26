@@ -207,8 +207,13 @@ export default {
     },
 
     verPrediccion(item) {
-      const riesgo = (item.probabilidad_riesgo * 100).toFixed(2);
-      alert(`Riesgo Cardiovascular calculado: ${riesgo}%`);
+      this.$router.push({
+        path: "/historial/analisis",
+        query: {
+          visitaId: item.id,
+          dni: item.dni,
+        },
+      });
     },
 
     nuevaVisita() {

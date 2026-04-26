@@ -3,15 +3,11 @@ import { Paciente } from "~/types/paciente";
 const API_URL = "http://localhost:8000";
 
 export const pacienteService = {
-  // Ahora "guardar" siempre hace POST porque cada consulta es una nueva Visita
-  // En tu pacienteService.ts
-
   async guardar(
     payload: any,
     visitaId: number | null = null
   ): Promise<Paciente> {
     try {
-      // Si viene un visitaId, usamos PUT para actualizar la visita existente
       const url = visitaId
         ? `${API_URL}/visitas/${visitaId}`
         : `${API_URL}/pacientes/`;
@@ -86,7 +82,14 @@ export const pacienteService = {
     }
   },
 
-  actualizarVisita(visitaId, datos) {
-    return axios.put(`/visitas/${visitaId}`, datos);
+  async obtenerVisitaPorId(visitaId: number) {
+    try {
+      const response = await fetch(`${API_URL}/visitas/${visitaId}`);
+      if (!response.ok) throw new Error("Error al obtener la visita");
+      return await response.json();
+    } catch (error) {
+      console.error("Error obteniendo visita por ID:", error);
+      throw error;
+    }
   },
 };
