@@ -8,7 +8,7 @@
       overflow: hidden;
     "
   >
-    <v-sheet color="transparent" class="px-12 pt-12 pb-0 flex-shrink-0">
+    <v-sheet color="transparent" class="px-8 pt-12 pb-0 flex-shrink-0">
       <h2 class="white--text text-h4 mb-4 font-weight-light">
         Realizar búsqueda
       </h2>
