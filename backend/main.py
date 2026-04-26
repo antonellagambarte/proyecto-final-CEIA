@@ -96,8 +96,8 @@ def guardar_visita_paciente(paciente_in: schemas.PacienteCreate, db: Session = D
     etapa = 2 if datos_dict.get("creatinina") else 1
     datos_ia = {k: v for k, v in datos_dict.items() if k not in ["dni", "nombre", "apellido"]}
     
-    score_ia_bruto, _ = predictor.ejecutar_prediccion(datos_ia, etapa=etapa)
-    score_ia = float(score_ia_bruto) # Casteo a float estándar de Python
+    score_ia_bruto, influencias = predictor.ejecutar_prediccion(datos_ia, etapa=etapa)
+    score_ia = float(score_ia_bruto)
 
     try:
         paciente_db = db.query(models.Paciente).filter(models.Paciente.dni == datos_dict['dni']).first()
@@ -120,8 +120,10 @@ def guardar_visita_paciente(paciente_in: schemas.PacienteCreate, db: Session = D
         nueva_visita.probabilidad_riesgo = score_ia
         if etapa == 1:
             nueva_visita.riesgo_preliminar = score_ia
+            nueva_visita.influencias_preliminares = influencias
         else:
             nueva_visita.riesgo_final = score_ia
+            nueva_visita.influencias_finales = influencias
         
         db.add(nueva_visita)
         db.commit()
@@ -199,15 +201,17 @@ def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)
         # Decidimos etapa: si hay creatinina, es Etapa 2 (Final)
         etapa_actual = 2 if (visita_db.creatinina is not None) else 1
         
-        prob_calculada, _ = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_actual)
+        prob_calculada, influencias = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_actual)
         prob_final = float(prob_calculada)
 
         # 4. Guardar resultados de la IA
         visita_db.probabilidad_riesgo = prob_final
         if etapa_actual == 2:
             visita_db.riesgo_final = prob_final
+            visita_db.influencias_finales = influencias
         else:
             visita_db.riesgo_preliminar = prob_final
+            visita_db.influencias_preliminares = influencias
 
         db.commit()
         db.refresh(visita_db)
@@ -229,3 +233,27 @@ def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)
         db.rollback()
         print(f"Error al actualizar visita: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/visitas/{visita_id}")
+def obtener_detalle_visita(visita_id: int, db: Session = Depends(get_db)):
+    # Buscamos la visita y cargamos la relación con el paciente
+    visita = db.query(models.Visita).filter(models.Visita.id == visita_id).first()
+    
+    if not visita:
+        raise HTTPException(status_code=404, detail="Visita no encontrada")
+    
+    # Esto asegura que devolvamos el objeto con la info del paciente incluida
+    return {
+        "id": visita.id,
+        "fecha_visita": visita.fecha_visita,
+        "fecha_actualizacion": visita.fecha_actualizacion,
+        "riesgo_preliminar": visita.riesgo_preliminar,
+        "riesgo_final": visita.riesgo_final,
+        "influencias_preliminares": visita.influencias_preliminares,
+        "influencias_finales": visita.influencias_finales,
+        "paciente": {
+            "nombre": visita.paciente.nombre,
+            "apellido": visita.paciente.apellido,
+            "dni": visita.paciente.dni
+        }
+    }

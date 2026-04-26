@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from sqlalchemy import JSON
 from database import Base
 
 class Paciente(Base):
@@ -54,5 +55,7 @@ class Visita(Base):
     riesgo_preliminar = Column(Float, nullable=True) 
     riesgo_final = Column(Float, nullable=True)     
     probabilidad_riesgo = Column(Float, nullable=True)
+    influencias_preliminares = Column(JSON, nullable=True)
+    influencias_finales = Column(JSON, nullable=True)
 
     paciente = relationship("Paciente", back_populates="visitas")
