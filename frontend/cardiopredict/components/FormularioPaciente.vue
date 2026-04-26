@@ -464,6 +464,21 @@ export default {
       visitaIdActual: null,
     };
   },
+
+  async mounted() {
+    const query = this.$route.query;
+
+    if (query.dni) {
+      this.form.dni = query.dni;
+      this.form.nombre = query.nombre;
+      this.form.apellido = query.apellido;
+      this.form.genero = query.genero;
+
+      this.esNuevaVisitaExistente = true;
+      this.bloquearPersonales = true;
+    }
+  },
+
   computed: {
     pasoLabGuardado() {
       const keysLab = this.laboratorio.flatMap((s) =>

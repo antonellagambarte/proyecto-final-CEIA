@@ -31,7 +31,18 @@
         <v-col cols="2">Fecha Inicio</v-col>
         <v-col cols="2">Última Modif.</v-col>
         <v-col cols="2">Estado</v-col>
-        <v-col cols="6"></v-col>
+        <v-col cols="6" class="text-right">
+          <v-btn
+            color="#43a047"
+            class="white--text custom-btn-new"
+            elevation="2"
+            small
+            @click="nuevaVisita"
+          >
+            <v-icon left x-small>fas fa-plus</v-icon>
+            NUEVA VISITA
+          </v-btn>
+        </v-col>
       </v-row>
       <v-divider class="grey darken-3 mb-4"></v-divider>
 
@@ -199,6 +210,19 @@ export default {
       const riesgo = (item.probabilidad_riesgo * 100).toFixed(2);
       alert(`Riesgo Cardiovascular calculado: ${riesgo}%`);
     },
+
+    nuevaVisita() {
+      // Redirigimos a nuevo-paciente pasando la info básica del paciente actual
+      this.$router.push({
+        path: "/nuevo-paciente",
+        query: {
+          dni: this.dni,
+          nombre: this.paciente.nombre,
+          apellido: this.paciente.apellido,
+          genero: this.historial[0].genero, // Tomamos el género de la última visita
+        },
+      });
+    },
   },
 
   async mounted() {
@@ -214,5 +238,12 @@ export default {
 .custom-btn {
   font-size: 0.65rem !important;
   letter-spacing: 0.5px;
+}
+
+.custom-btn-new {
+  font-size: 0.7rem !important;
+  font-weight: bold;
+  letter-spacing: 1px;
+  border-radius: 4px; /* O 8px si prefieres bordes más redondeados */
 }
 </style>
