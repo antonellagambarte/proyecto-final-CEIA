@@ -100,7 +100,7 @@
         style="width: fit-content"
       >
         <v-icon small color="grey lighten-1">fas fa-arrow-left</v-icon>
-        <span class="grey--text text--lighten-1 caption ml-2">
+        <span class="grey--text text--lighten-1 caption ml-2 cursor-pointer">
           {{
             modoEdicion
               ? "Volver al historial"
@@ -433,31 +433,31 @@ export default {
       evaluacionFisicaConfig: [
         { key: "altura", label: "Altura (m)" },
         { key: "peso", label: "Peso (Kg)" },
-        { key: "presion_sis", label: "Presión sistólica" },
-        { key: "presion_dis", label: "Presión diastólica" },
+        { key: "presion_sis", label: "Presión sistólica (mmHg)" },
+        { key: "presion_dis", label: "Presión diastólica (mmHg)" },
       ],
       laboratorio: [
         {
           titulo: "Perfil lipídico",
           campos: [
-            { key: "colesterol", label: "Colesterol total" },
-            { key: "hdl", label: "HDL" },
-            { key: "trigliceridos", label: "Triglicéridos" },
+            { key: "colesterol", label: "Colesterol total (mg/dL)" },
+            { key: "hdl", label: "HDL (mg/dL)" },
+            { key: "trigliceridos", label: "Triglicéridos (mg/dL)" },
           ],
         },
         {
           titulo: "Función renal",
           campos: [
-            { key: "creatinina", label: "Creatinina" },
-            { key: "pcr", label: "Proteína C (PCR)" },
+            { key: "creatinina", label: "Creatinina (mg/dL)" },
+            { key: "pcr", label: "Proteína C (PCR) (mg/dL)" },
           ],
         },
         {
           titulo: "Hematología",
           campos: [
-            { key: "hemoglobina", label: "Hemoglobina" },
-            { key: "acido_urico", label: "Ácido úrico" },
-            { key: "potasio", label: "Potasio" },
+            { key: "hemoglobina", label: "Hemoglobina (g/dL)" },
+            { key: "acido_urico", label: "Ácido úrico (mg/dL)" },
+            { key: "potasio", label: "Potasio (mmol/dL)" },
           ],
         },
       ],
