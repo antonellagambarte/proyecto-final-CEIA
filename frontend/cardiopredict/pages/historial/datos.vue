@@ -244,7 +244,13 @@
             <v-btn
               color="primary"
               x-large
-              :to="{ path: '/historial/analisis', query: { dni: pacienteDni } }"
+              :to="{
+                path: '/historial/analisis',
+                query: {
+                  dni: paciente.dni,
+                  visitaId: paciente.id,
+                },
+              }"
             >
               <v-icon left>fas fa-chart-pie</v-icon>
               Ver Análisis de Riesgo e Influencias
