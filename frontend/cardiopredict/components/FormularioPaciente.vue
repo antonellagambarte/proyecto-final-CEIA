@@ -470,9 +470,9 @@ export default {
 
     if (query.dni) {
       this.form.dni = query.dni;
-      this.form.nombre = query.nombre;
-      this.form.apellido = query.apellido;
-      this.form.genero = query.genero;
+      // this.form.nombre = query.nombre;
+      // this.form.apellido = query.apellido;
+      // this.form.genero = query.genero;
 
       this.esNuevaVisitaExistente = true;
       this.bloquearPersonales = true;
@@ -543,6 +543,7 @@ export default {
         try {
           const resultados = await pacienteService.buscarPorDni(newDni);
           const pacienteExistente = resultados.find((p) => p.dni === newDni);
+          console.log("PACIENTE EXISTENTE: ", pacienteExistente);
 
           if (pacienteExistente) {
             this.form.nombre = pacienteExistente.nombre;
@@ -566,11 +567,22 @@ export default {
     datosIniciales: {
       handler(newVal) {
         if (newVal && Object.keys(newVal).length > 0) {
-          this.form = { ...this.form, ...newVal };
-          this.visitaIdActual = newVal.id; // <--- Capturamos el ID de la visita
+          this.form.dni = newVal.dni || "";
+          this.form.nombre = newVal.nombre || "";
+          this.form.apellido = newVal.apellido || "";
+          this.form.genero = newVal.genero || null;
+          this.form.edad = newVal.edad || "";
+
+          Object.assign(this.form, newVal);
+
+          this.visitaIdActual = newVal.id;
+
+          // 3. Registrar campos para bloqueo (basado en lo que realmente vino)
           this.camposPersistidos = Object.keys(newVal).filter(
             (k) => newVal[k] !== null && newVal[k] !== "" && k !== "id"
           );
+
+          console.log("Campos persistidos finales:", this.camposPersistidos);
         }
       },
       immediate: true,
@@ -694,11 +706,11 @@ export default {
     inicializarForm() {
       return {
         id: null,
-        apellido: "",
-        nombre: "",
-        genero: null,
-        dni: "",
-        edad: null,
+        apellido: this.datosIniciales.apellido || "",
+        nombre: this.datosIniciales.nombre || "",
+        dni: this.datosIniciales.dni || "",
+        edad: this.datosIniciales.edad || "",
+        genero: this.datosIniciales.genero || null,
         diabetico: null,
         hipertension: null,
         asma: null,

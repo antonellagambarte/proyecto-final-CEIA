@@ -357,6 +357,11 @@ export default {
       this.datosParaFormulario = {
         ...this.paciente,
         id: this.paciente.id,
+        apellido: this.paciente.apellido,
+        nombre: this.paciente.nombre,
+        dni: this.paciente.dni,
+        edad: this.paciente.edad,
+        genero: this.paciente.genero === 0 ? "Masculino" : "Femenino",
         genero: this.paciente.genero === 0 ? "Masculino" : "Femenino",
         diabetico: mapeoValor(this.paciente.diabetes),
         asma: mapeoValor(this.paciente.asma),
