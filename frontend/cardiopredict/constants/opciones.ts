@@ -21,17 +21,16 @@ export const OpcionesDiabetes = {
 
 export const OpcionesAlcohol = {
   NUNCA: 0,
-  DIARIAMENTE: 1,
-  CASI_DIARIO: 2,
-  TRES_CUATRO_SEMANA: 3,
-  DOS_VECES_SEMANA: 4,
-  UNA_VEZ_SEMANA: 5,
-  DOS_TRES_MES: 6,
-  UNA_VEZ_MES: 7,
-  SIETE_ONCE_AÑO: 8,
-  TRES_SEIS_AÑO: 9,
-  UNA_DOS_AÑO: 10,
-  NO_SABE: 99,
+  DIARIAMENTE: 10,
+  CASI_DIARIO: 9,
+  TRES_CUATRO_SEMANA: 8,
+  DOS_VECES_SEMANA: 7,
+  UNA_VEZ_SEMANA: 6,
+  DOS_TRES_MES: 5,
+  UNA_VEZ_MES: 4,
+  SIETE_ONCE_AÑO: 3,
+  TRES_SEIS_AÑO: 2,
+  UNA_DOS_AÑO: 1,
 };
 
 export const OpcionesAnhedonia = {
@@ -39,5 +38,4 @@ export const OpcionesAnhedonia = {
   VARIOS_DIAS: 1,
   MAS_DE_LA_MITAD: 2,
   CASI_TODOS: 3,
-  NO_SABE: 9,
 } as const;

@@ -756,7 +756,9 @@ export default {
         { text: "Una vez x semana", value: OpcionesAlcohol.UNA_VEZ_SEMANA },
         { text: "2-3 veces x mes", value: OpcionesAlcohol.DOS_TRES_MES },
         { text: "Una vez al mes", value: OpcionesAlcohol.UNA_VEZ_MES },
-        { text: "No sabe", value: OpcionesAlcohol.NO_SABE },
+        { text: "7-11 veces al año", value: OpcionesAlcohol.SIETE_ONCE_AÑO },
+        { text: "3-6 veces al año", value: OpcionesAlcohol.TRES_SEIS_AÑO },
+        { text: "1-2 veces al año", value: OpcionesAlcohol.UNA_DOS_AÑO },
       ];
     },
 

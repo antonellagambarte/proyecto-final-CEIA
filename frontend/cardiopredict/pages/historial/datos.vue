@@ -407,14 +407,16 @@ export default {
     traducirAlcohol(val) {
       const opciones = {
         0: "Nunca",
-        1: "Diariamente",
-        2: "Casi diario",
-        3: "3-4 veces por semana",
-        4: "2 veces por semana",
-        5: "Una vez por semana",
-        6: "2-3 veces por mes",
-        7: "Una vez al mes",
-        9: "No sabe",
+        10: "Diariamente",
+        9: "Casi diario",
+        8: "3-4 veces por semana",
+        7: "2 veces por semana",
+        6: "Una vez por semana",
+        5: "2-3 veces por mes",
+        4: "Una vez al mes",
+        3: "7-11 veces al año",
+        2: "3-6 veces al año",
+        1: "1-2 veces al año",
       };
       return opciones[val] || "-";
     },
