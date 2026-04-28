@@ -543,15 +543,15 @@ export default {
   },
   watch: {
     async "form.dni"(newDni) {
-      if (newDni && newDni.length >= 7) {
+      if (newDni) {
         try {
           const resultados = await pacienteService.buscarPorDni(newDni);
           const pacienteExistente = resultados.find((p) => p.dni === newDni);
-          console.log("PACIENTE EXISTENTE: ", pacienteExistente);
 
           if (pacienteExistente) {
             this.form.nombre = pacienteExistente.nombre;
             this.form.apellido = pacienteExistente.apellido;
+            this.form.dni = pacienteExistente.dni;
             this.form.genero =
               pacienteExistente.genero === 0 ? "Masculino" : "Femenino";
 
@@ -561,6 +561,8 @@ export default {
               this.camposPersistidos.push("apellido");
             if (!this.camposPersistidos.includes("genero"))
               this.camposPersistidos.push("genero");
+            if (!this.camposPersistidos.includes("dni"))
+              this.camposPersistidos.push("dni");
           }
         } catch (e) {
           console.error("Error validando paciente existente:", e);

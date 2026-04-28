@@ -219,14 +219,13 @@ export default {
     },
 
     nuevaVisita() {
-      // Redirigimos a nuevo-paciente pasando la info básica del paciente actual
       this.$router.push({
         path: "/nuevo-paciente",
         query: {
           dni: this.dni,
           nombre: this.paciente.nombre,
           apellido: this.paciente.apellido,
-          genero: this.historial[0].genero, // Tomamos el género de la última visita
+          genero: this.historial[0].genero,
         },
       });
     },
