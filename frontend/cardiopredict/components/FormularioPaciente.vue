@@ -367,13 +367,16 @@
           class="mr-4 custom-btn"
           @click="predecir"
         >
-          <v-icon left small>fas fa-chart-line</v-icon> PREDICCIÓN
+          <v-icon left small class="black--text">fas fa-chart-line</v-icon>
+          <span class="black--text">
+            PREDICCIÓN
           {{ paso === 3 ? "PRELIMINAR" : "FINAL" }}
+          </span>
         </v-btn>
         <v-btn
           v-if="paso < 4"
           color="#635b5b"
-          class="white--text custom-btn px-10"
+          class="black--text custom-btn px-10"
           @click="siguiente"
           >SIGUIENTE</v-btn
         >
@@ -486,6 +489,7 @@ export default {
       );
       return keysLab.every((key) => this.camposPersistidos.includes(key));
     },
+
     mostrarBotonGuardar() {
       if (this.paso < 3) return false;
       if (this.paso === 4) return !this.pasoLabGuardado;
@@ -793,5 +797,9 @@ export default {
   filter: grayscale(0.4);
   pointer-events: none;
   background-color: #333 !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

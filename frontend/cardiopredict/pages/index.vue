@@ -36,7 +36,6 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 50px;
-  border: 6px solid #26c6da;
   box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.6);
 }
 

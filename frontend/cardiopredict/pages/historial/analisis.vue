@@ -223,11 +223,11 @@ export default {
 
 /* Contenedor con scroll para los gráficos */
 .grafico-scroll-container {
-  /* Reducimos un poco el alto para dar lugar a la leyenda fija */
-  max-height: 560px;
+  max-height: 540px;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 15px;
+  padding-bottom: 15px;
   /* Opcional: un fade al final para indicar más contenido */
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
 }

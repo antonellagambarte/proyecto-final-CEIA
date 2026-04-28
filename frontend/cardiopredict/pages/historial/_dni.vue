@@ -20,7 +20,9 @@
         @click="$router.push('/historial')"
       >
         <v-icon small color="grey">fas fa-arrow-left</v-icon>
-        <span class="grey--text caption ml-2">Volver a búsqueda</span>
+        <span class="grey--text caption ml-2 cursor-pointer"
+          >Volver a búsqueda</span
+        >
       </div>
 
       <h2 class="white--text text-h4 mb-8 font-weight-light">
@@ -34,13 +36,13 @@
         <v-col cols="6" class="text-right">
           <v-btn
             color="#43a047"
-            class="white--text custom-btn-new"
+            class="black--text custom-btn-new"
             elevation="2"
             small
             @click="nuevaVisita"
           >
             <v-icon left x-small>fas fa-plus</v-icon>
-            NUEVA VISITA
+            <span class="black--text"> NUEVA VISITA </span>
           </v-btn>
         </v-col>
       </v-row>
@@ -78,7 +80,7 @@
           </v-btn>
           <v-btn
             color="#635b5b"
-            class="white--text custom-btn"
+            class="black--text custom-btn"
             small
             :to="`/historial/datos?dni=${item.dni}&visitaId=${item.id}`"
           >
@@ -250,5 +252,9 @@ export default {
   font-weight: bold;
   letter-spacing: 1px;
   border-radius: 4px; /* O 8px si prefieres bordes más redondeados */
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>
