@@ -39,7 +39,7 @@ def home():
     return {"message": "Backend CardioPredict activo con SQLite (Relacional Visitas)"}
 
 @app.post("/pacientes/predecir")
-def predecir_al_vuelo(datos: dict):
+def predecir_al_vuelo(datos: dict, preliminar: bool = False):
     try:
         # MAPEO: Traducimos del lenguaje del Front al lenguaje del Modelo
         datos_ia = {
@@ -69,8 +69,11 @@ def predecir_al_vuelo(datos: dict):
         }
 
         # Detección de etapa (mejorada)
-        crea = datos.get("creatinina")
-        etapa_a_usar = 2 if (crea is not None and str(crea).strip() != "" and float(crea) > 0) else 1
+        if preliminar:
+            etapa_a_usar = 1
+        else:
+            crea = datos.get("creatinina")
+            etapa_a_usar = 2 if (crea is not None and str(crea).strip() != "" and float(crea) > 0) else 1
         
         # Llamada al predictor
         prob_calculada, influencias = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_a_usar)

@@ -124,12 +124,16 @@ def ejecutar_prediccion(datos_dict, etapa=1):
             for col, val in zip(columnas_entrenamiento, shap_values_final):
                 nombre = MAPA_NOMBRES.get(col, col)
                 acumulado[nombre] = acumulado.get(nombre, 0) + float(val)
+                
+            total_abs = sum(abs(v) for v in acumulado.values())
 
             for nombre, total_val in acumulado.items():
                 if abs(total_val) > 0.001: 
+                    porcentaje = (abs(total_val) / total_abs) * 100 if total_abs > 0 else 0
                     influencias.append({
                         "feature": nombre,
-                        "valor": round(total_val, 4)
+                        "valor": round(total_val, 4),
+                        "porcentaje": round(porcentaje, 2)
                     })
             # ---------------------------------------
             
