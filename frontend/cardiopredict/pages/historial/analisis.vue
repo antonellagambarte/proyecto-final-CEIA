@@ -8,6 +8,7 @@
       <v-btn text small dark @click="$router.go(-1)" class="mb-4 grey--text">
         <v-icon left small>fas fa-arrow-left</v-icon> Volver al informe
       </v-btn>
+
       <div class="d-flex align-center">
         <h2 class="white--text text-h4 font-weight-thin">
           Análisis Comparativo de Riesgo
@@ -77,9 +78,9 @@
         <v-card dark color="#252525" class="pa-8" rounded="lg">
           <v-tabs v-model="tab" color="cyan" grow class="mb-6">
             <v-tab>Influencia en predicción preliminar</v-tab>
-            <v-tab v-if="resultado.final.influencias.length"
-              >Influencia en predicción final</v-tab
-            >
+            <v-tab v-if="resultado.final.influencias.length">
+              Influencia en predicción final
+            </v-tab>
           </v-tabs>
 
           <v-tabs-items v-model="tab" class="transparent">
@@ -94,19 +95,31 @@
           </v-tabs-items>
 
           <v-divider class="my-4 grey darken-3"></v-divider>
+
           <div class="d-flex justify-space-between pt-2 px-2">
             <div class="cyan--text text--lighten-2 caption">
-              <v-icon x-small color="cyan lighten-2" class="mr-1"
-                >fas fa-minus</v-icon
-              >
-              Reduce riesgo
+              <v-icon x-small color="cyan lighten-2" class="mr-1">
+                fas fa-arrow-down
+              </v-icon>
+              Disminuye predicción del modelo
             </div>
+
             <div class="red--text text--lighten-2 caption">
-              Aumenta riesgo
-              <v-icon x-small color="red lighten-2" class="ml-1"
-                >fas fa-plus</v-icon
-              >
+              Aumenta predicción del modelo
+              <v-icon x-small color="red lighten-2" class="ml-1">
+                fas fa-arrow-up
+              </v-icon>
             </div>
+          </div>
+          <div class="grey--text text--lighten-1 caption mt-4">
+            El modelo estima un nivel de riesgo inicial basado en su
+            entrenamiento y lo ajusta según los factores individuales del
+            paciente. Cada variable puede aumentar o disminuir la probabilidad
+            final de riesgo. /Los porcentajes muestran cuánto contribuye cada
+            factor al resultado final del modelo en este paciente, en relación
+            con los demás factores./Los porcentajes representan la importancia
+            relativa de cada factor dentro de la explicación del modelo para
+            este paciente.
           </div>
         </v-card>
       </v-col>
@@ -116,10 +129,8 @@
 
 <script>
 import { pacienteService } from "@/services/pacienteService";
-import GraficoInfluencia from "@/components/GraficoInfluencia.vue";
 
 export default {
-  components: { GraficoInfluencia },
   data() {
     return {
       visitaId: this.$route.query.visitaId,
@@ -152,36 +163,58 @@ export default {
   async mounted() {
     await this.obtenerAnalisis();
   },
+
   methods: {
     async obtenerAnalisis() {
       this.cargando = true;
       try {
-        // 1. Traemos la visita específica (que ya tiene los JSON de influencias)
         const visita = await pacienteService.obtenerVisitaPorId(this.visitaId);
 
         if (!visita) return;
 
-        // 2. Seteamos los datos del paciente (vienen en la relación del backend)
         this.paciente = {
           nombre: visita.paciente.nombre,
           apellido: visita.paciente.apellido,
         };
 
-        // 3. Cargamos los resultados PRELIMINARES (Etapa 1)
-        this.resultado.preliminar = {
-          probabilidad: visita.riesgo_preliminar || 0,
-          // Usamos la columna JSON que guardamos en el backend
-          influencias: visita.influencias_preliminares || [],
-        };
+        if (visita.riesgo_preliminar == null) {
+          const payload = {
+            edad: visita.edad,
+            genero: visita.genero,
+            fumo_100_cigarrillos: visita.fumo_100_cigarrillos,
+            consumo_alcohol_ultimo_año: visita.consumo_alcohol_ultimo_año,
+            actividad_deportiva_moderada_x_semana:
+              visita.actividad_deportiva_moderada_x_semana,
+            anhedonia: visita.anhedonia,
+            peso: visita.peso,
+            altura: visita.altura,
+            presion_sistolica_final: visita.presion_sistolica_final,
+            presion_diastolica_final: visita.presion_diastolica_final,
+            hipertension: visita.hipertension,
+            diabetes: visita.diabetes,
+            asma: visita.asma,
+            riñones_debiles_fallando: visita.riñones_debiles_fallando,
+            fam_cardio: visita.fam_cardio,
+            fam_diabetes: visita.fam_diabetes,
+            fam_asma: visita.fam_asma,
+          };
+          const res = await pacienteService.predecirAlVuelo(payload, true);
+          this.resultado.preliminar = {
+            probabilidad: res.probabilidad,
+            influencias: res.influencias || [],
+          };
+        } else {
+          this.resultado.preliminar = {
+            probabilidad: visita.riesgo_preliminar || 0,
+            influencias: visita.influencias_preliminares || [],
+          };
+        }
 
-        // 4. Cargamos los resultados FINALES (Etapa 2) si existen
         this.resultado.final = {
           probabilidad: visita.riesgo_final || 0,
-          // Usamos la otra columna JSON
           influencias: visita.influencias_finales || [],
         };
 
-        // Si ya hay resultados finales, saltamos automáticamente a esa pestaña
         if (this.resultado.final.probabilidad > 0) {
           this.tab = 1;
         }
@@ -196,43 +229,13 @@ export default {
 </script>
 
 <style scoped>
-.scroll-container {
-  max-height: 550px;
-  overflow-y: auto;
-  padding-right: 15px;
-}
-/* Estilo del scrollbar */
-.scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-.scroll-container::-webkit-scrollbar-track {
-  background: #252525;
-}
-.scroll-container::-webkit-scrollbar-thumb {
-  background: #444;
-  border-radius: 10px;
-}
-.scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #00e5ff;
-}
-
-/* Hacer que el fondo de las pestañas sea transparente para que no choque con el fondo oscuro */
-.v-tabs-items {
-  background-color: transparent !important;
-}
-
-/* Contenedor con scroll para los gráficos */
 .grafico-scroll-container {
-  max-height: 540px;
+  max-height: 480px;
   overflow-y: auto;
-  overflow-x: hidden;
   padding-right: 15px;
-  padding-bottom: 15px;
-  /* Opcional: un fade al final para indicar más contenido */
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
 }
 
-/* Estilización del scrollbar para que sea discreto */
 .grafico-scroll-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -248,5 +251,9 @@ export default {
 
 .grafico-scroll-container::-webkit-scrollbar-thumb:hover {
   background: #00e5ff;
+}
+
+.v-tabs-items {
+  background-color: transparent !important;
 }
 </style>

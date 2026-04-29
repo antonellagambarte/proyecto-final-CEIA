@@ -71,9 +71,9 @@
           </v-col>
           <v-col cols="3" class="text-right">
             <v-btn
-              color="#4a4444"
+              color="#a39a9a"
               outlined
-              class="white--text custom-btn"
+              class="custom-btn"
               :to="`/historial/${p.dni}`"
             >
               VER HISTORIAL

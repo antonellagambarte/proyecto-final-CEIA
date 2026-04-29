@@ -1,27 +1,39 @@
 <template>
   <v-card flat color="transparent" class="white--text">
-    <div v-for="(item, index) in influencias" :key="index" class="mb-4">
-      <div class="d-flex justify-space-between align-end mb-1">
-        <span class="text-caption font-weight-bold grey--text text--lighten-1">
-          {{ item.feature.toUpperCase() }}
-        </span>
-        <span
-          :class="item.valor > 0 ? 'red--text' : 'cyan--text'"
-          class="text-caption font-weight-black"
-        >
-          {{ item.valor > 0 ? "+" : "" }}{{ (item.valor * 100).toFixed(2) }}%
-        </span>
+    <div v-for="(item, i) in influencias" :key="i" class="mb-4">
+      <div class="d-flex justify-space-between align-center mb-1">
+        <div class="white--text text-body-2">
+          {{ item.feature }}
+        </div>
+
+        <div class="d-flex align-center">
+          <v-icon
+            x-small
+            class="mr-1"
+            :color="item.valor > 0 ? 'red lighten-2' : 'cyan lighten-2'"
+          >
+            {{ item.valor > 0 ? "fas fa-arrow-up" : "fas fa-arrow-down" }}
+          </v-icon>
+
+          <span
+            :class="
+              item.valor > 0
+                ? 'red--text text--lighten-2'
+                : 'cyan--text text--lighten-2'
+            "
+            class="text-caption"
+          >
+            {{ item.porcentaje }}%
+          </span>
+        </div>
       </div>
 
       <v-progress-linear
-        :value="calcularPorcentaje(item.valor)"
-        :color="item.valor > 0 ? 'red darken-2' : 'cyan darken-2'"
-        height="12"
+        :value="item.porcentaje"
+        height="8"
+        :color="item.valor > 0 ? 'red' : 'cyan'"
         rounded
-        background-opacity="0.1"
-      >
-        <template v-slot:default="{ value }"> </template>
-      </v-progress-linear>
+      />
     </div>
   </v-card>
 </template>
