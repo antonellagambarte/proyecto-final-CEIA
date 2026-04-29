@@ -126,7 +126,7 @@
           <div v-if="paso === 1">
             <v-row dense class="mb-4">
               <v-col cols="12" md="5">
-                <p class="custom-label">Apellido *</p>
+                <p class="custom-label">Apellido</p>
                 <v-text-field
                   v-model="form.apellido"
                   solo
@@ -140,7 +140,7 @@
                 />
               </v-col>
               <v-col cols="12" md="5" offset-md="1">
-                <p class="custom-label">Nombre *</p>
+                <p class="custom-label">Nombre</p>
                 <v-text-field
                   v-model="form.nombre"
                   solo
@@ -156,7 +156,7 @@
             </v-row>
             <v-row dense class="mb-6">
               <v-col cols="12" md="4">
-                <p class="custom-label">Género *</p>
+                <p class="custom-label">Género</p>
                 <v-select
                   v-model="form.genero"
                   :items="['Masculino', 'Femenino']"
@@ -171,7 +171,7 @@
                 />
               </v-col>
               <v-col cols="12" md="3" offset-md="1">
-                <p class="custom-label">DNI *</p>
+                <p class="custom-label">DNI</p>
                 <v-text-field
                   v-model="form.dni"
                   solo
@@ -185,7 +185,7 @@
                 />
               </v-col>
               <v-col cols="12" md="2" offset-md="1">
-                <p class="custom-label">Edad *</p>
+                <p class="custom-label">Edad</p>
                 <v-text-field
                   v-model="form.edad"
                   solo
@@ -201,7 +201,7 @@
             </v-row>
             <v-divider class="grey darken-3 mb-6"></v-divider>
             <h3 class="white--text text-h5 mb-6 font-weight-light">
-              Antecedentes médicos *
+              Antecedentes médicos
             </h3>
             <v-row dense>
               <v-col
@@ -232,7 +232,7 @@
           <div v-if="paso === 2">
             <v-row v-for="(q, i) in preguntasVida" :key="i" dense class="mb-5">
               <v-col cols="12" md="10">
-                <p class="custom-label">{{ q.label }} *</p>
+                <p class="custom-label">{{ q.label }}</p>
                 <v-select
                   v-model="form[q.key]"
                   :items="q.options"
@@ -260,7 +260,7 @@
                 :key="ant.key"
                 class="mb-4"
               >
-                <p class="custom-label">{{ ant.label }} *</p>
+                <p class="custom-label">{{ ant.label }}</p>
                 <v-select
                   v-model="form[ant.key]"
                   :items="itemsCompletos"
@@ -279,7 +279,7 @@
             </v-row>
             <v-divider class="grey darken-3 mb-6"></v-divider>
             <h3 class="white--text text-h5 mb-4 font-weight-light">
-              Evaluación física *
+              Evaluación física
             </h3>
             <v-row dense>
               <v-col
@@ -354,6 +354,7 @@
         </v-btn>
         <v-btn
           v-if="mostrarBotonGuardar"
+          :disabled="!pasoActualValido || (paso === 4 && pasoLabGuardado)"
           color="success"
           outlined
           class="mr-4 custom-btn"
@@ -370,7 +371,7 @@
           <v-icon left small class="black--text">fas fa-chart-line</v-icon>
           <span class="black--text">
             PREDICCIÓN
-          {{ paso === 3 ? "PRELIMINAR" : "FINAL" }}
+            {{ paso === 3 ? "PRELIMINAR" : "FINAL" }}
           </span>
         </v-btn>
         <v-btn
@@ -490,10 +491,26 @@ export default {
       return keysLab.every((key) => this.camposPersistidos.includes(key));
     },
 
+    pasoActualValido() {
+      if (this.paso === 3) {
+        return (
+          this.antecedentesFamiliaresConfig.every(
+            (c) => this.form[c.key] !== null
+          ) && this.evaluacionFisicaConfig.every((c) => !!this.form[c.key])
+        );
+      }
+
+      if (this.paso === 4) {
+        return this.laboratorio.every((sec) =>
+          sec.campos.every((c) => !!this.form[c.key])
+        );
+      }
+
+      return false;
+    },
+
     mostrarBotonGuardar() {
-      if (this.paso < 3) return false;
-      if (this.paso === 4) return !this.pasoLabGuardado;
-      return !this.bloqueoEdicion;
+      return this.paso >= 3;
     },
   },
   created() {
@@ -764,11 +781,10 @@ export default {
 
     getAnhedoniaOptions() {
       return [
-        { text: "Para nada", value: OpcionesAnhedonia.NADA },
+        { text: "Nunca", value: OpcionesAnhedonia.NADA },
         { text: "Varios días", value: OpcionesAnhedonia.VARIOS_DIAS },
         { text: "Más de la mitad", value: OpcionesAnhedonia.MAS_DE_LA_MITAD },
         { text: "Casi todos los días", value: OpcionesAnhedonia.CASI_DIARIO },
-        { text: "No sabe", value: OpcionesAnhedonia.NO_SABE },
       ];
     },
 

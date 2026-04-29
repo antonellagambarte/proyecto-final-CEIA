@@ -116,13 +116,13 @@
                 </div>
               </v-col>
               <v-col cols="6" md="3">
-                <div class="label-info">RIÑONES DÉBILES</div>
+                <div class="label-info">PROBLEMAS RENALES</div>
                 <div class="text-body-1">
                   {{ traducirOpcion(paciente.riñones_debiles_fallando) }}
                 </div>
               </v-col>
               <v-col cols="6" md="3">
-                <div class="label-info">HISTORIAL TABAQUISMO</div>
+                <div class="label-info">HISTORIAL DE TABAQUISMO</div>
                 <div class="text-body-1">
                   {{ traducirOpcion(paciente.fumo_100_cigarrillos) }}
                 </div>
@@ -209,13 +209,13 @@
                 <div class="text-body-1">{{ paciente.peso || "-" }} Kg</div>
               </v-col>
               <v-col cols="6" md="2">
-                <div class="label-info">P. SISTÓLICA</div>
+                <div class="label-info">PRESIÓN SISTÓLICA</div>
                 <div class="text-body-1">
                   {{ paciente.presion_sistolica_final || "-" }} mmHg
                 </div>
               </v-col>
               <v-col cols="6" md="2">
-                <div class="label-info">P. DIASTÓLICA</div>
+                <div class="label-info">PRESIÓN DIASTÓLICA</div>
                 <div class="text-body-1">
                   {{ paciente.presion_diastolica_final || "-" }} mmHg
                 </div>
@@ -281,7 +281,7 @@ export default {
       cargando: true,
       mostrandoEdicion: false,
       paciente: {},
-      datosParaFormulario: null, // Objeto formateado para el componente hijo
+      datosParaFormulario: null,
       itemsLaboratorio: [
         { label: "COLESTEROL TOTAL", key: "colesterol_total", unit: "mg/dL" },
         { label: "HDL", key: "hdl", unit: "mg/dL" },
@@ -290,7 +290,7 @@ export default {
         { label: "HEMOGLOBINA", key: "hemoglobina", unit: "g/dL" },
         { label: "CREATININA", key: "creatinina", unit: "mg/dL" },
         { label: "ÁCIDO ÚRICO", key: "acido_urico", unit: "mg/dL" },
-        { label: "POTASIO", key: "potasio", unit: "mEq/L" },
+        { label: "POTASIO", key: "potasio", unit: "mmol/L" },
       ],
     };
   },
@@ -422,11 +422,10 @@ export default {
     },
     traducirAnhedonia(val) {
       const opciones = {
-        0: "Para nada",
+        0: "Nunca",
         1: "Varios días",
         2: "Más de la mitad de los días",
         3: "Casi todos los días",
-        9: "No sabe",
       };
       return opciones[val] || "-";
     },
