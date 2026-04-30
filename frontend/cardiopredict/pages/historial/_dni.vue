@@ -150,7 +150,7 @@ export default {
 
           alcohol: v.consumo_alcohol_ultimo_año,
           ejercicio: v.actividad_deportiva_moderada_x_semana,
-          fumador: inversoMapa(v.fumo_100_cigarrillos),
+          fumador: v.fumo_100_cigarrillos,
           anhedonia: v.anhedonia,
 
           fam_cardio: inversoMapa(v.fam_cardio),

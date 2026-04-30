@@ -549,7 +549,10 @@ export default {
       {
         key: "fumador",
         label: "¿Ha fumado al menos 100 cigarrillos?",
-        options: this.itemsCompletos,
+        options: [
+          { text: "Sí", value: 1 },
+          { text: "No", value: 0 },
+        ],
       },
       {
         key: "anhedonia",
@@ -685,7 +688,8 @@ export default {
         // Datos de la Visita (Clínicos)
         edad: parseInt(this.form.edad) || 0,
         genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
-        fumo_100_cigarrillos: mapa(this.form.fumador),
+        fumo_100_cigarrillos:
+          this.form.fumador === OpcionesCompletas.SI ? 1 : 0,
         riñones_debiles_fallando: mapa(this.form.renales),
         diabetes: mapa(this.form.diabetico),
         hipertension: mapa(this.form.hipertension),

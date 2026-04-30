@@ -124,7 +124,7 @@
               <v-col cols="6" md="3">
                 <div class="label-info">HISTORIAL DE TABAQUISMO</div>
                 <div class="text-body-1">
-                  {{ traducirOpcion(paciente.fumo_100_cigarrillos) }}
+                  {{ traducirBinario(paciente.fumo_100_cigarrillos) }}
                 </div>
               </v-col>
             </v-row>
@@ -373,7 +373,7 @@ export default {
         asma: mapeoValor(this.paciente.asma),
         hipertension: mapeoValor(this.paciente.hipertension),
         renales: mapeoValor(this.paciente.riñones_debiles_fallando),
-        fumador: mapeoValor(this.paciente.fumo_100_cigarrillos),
+        fumador: this.paciente.fumo_100_cigarrillos,
         alcohol: this.paciente.consumo_alcohol_ultimo_año,
         ejercicio: this.paciente.actividad_deportiva_moderada_x_semana,
         anhedonia: this.paciente.anhedonia,
@@ -419,6 +419,11 @@ export default {
         1: "1-2 veces al año",
       };
       return opciones[val] || "-";
+    },
+    traducirBinario(val) {
+      if (val === 1 || val === 1.0) return "SÍ";
+      if (val === 0 || val === 0.0) return "NO";
+      return "-";
     },
     traducirAnhedonia(val) {
       const opciones = {
