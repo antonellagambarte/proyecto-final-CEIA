@@ -790,8 +790,13 @@ export default {
 
     irADetallePrediccion() {
       this.modalExito = false;
-      // Navega al análisis comparativo enviando el DNI
-      this.$router.push(`/historial/prediccion/${this.form.dni}`);
+      this.$router.push({
+        path: "/historial/analisis",
+        query: {
+          dni: this.form.dni,
+          visitaId: this.visitaIdActual,
+        },
+      });
     },
   },
 };
