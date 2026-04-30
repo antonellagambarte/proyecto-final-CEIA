@@ -77,9 +77,9 @@
       <v-col cols="12" md="8">
         <v-card dark color="#252525" class="pa-8" rounded="lg">
           <v-tabs v-model="tab" color="cyan" grow class="mb-6">
-            <v-tab>Influencia en predicción preliminar</v-tab>
+            <v-tab>Factores que influyen en el resultado preliminar</v-tab>
             <v-tab v-if="resultado.final.influencias.length">
-              Influencia en predicción final
+              Factores que influyen en el resultado final
             </v-tab>
           </v-tabs>
 
@@ -101,25 +101,19 @@
               <v-icon x-small color="cyan lighten-2" class="mr-1">
                 fas fa-arrow-down
               </v-icon>
-              Disminuye predicción del modelo
+              Disminuye la predicción estimada
             </div>
 
             <div class="red--text text--lighten-2 caption">
-              Aumenta predicción del modelo
+              Aumenta la predicción estimada
               <v-icon x-small color="red lighten-2" class="ml-1">
                 fas fa-arrow-up
               </v-icon>
             </div>
           </div>
           <div class="grey--text text--lighten-1 caption mt-4">
-            El modelo estima un nivel de riesgo inicial basado en su
-            entrenamiento y lo ajusta según los factores individuales del
-            paciente. Cada variable puede aumentar o disminuir la probabilidad
-            final de riesgo. /Los porcentajes muestran cuánto contribuye cada
-            factor al resultado final del modelo en este paciente, en relación
-            con los demás factores./Los porcentajes representan la importancia
-            relativa de cada factor dentro de la explicación del modelo para
-            este paciente.
+            Las contribuciones se basan en valores SHAP, que explican cómo cada
+            variable modifica la predicción respecto a un valor base del modelo.
           </div>
         </v-card>
       </v-col>
@@ -230,7 +224,7 @@ export default {
 
 <style scoped>
 .grafico-scroll-container {
-  max-height: 480px;
+  max-height: 450px;
   overflow-y: auto;
   padding-right: 15px;
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
