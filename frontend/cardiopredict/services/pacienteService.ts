@@ -12,7 +12,7 @@ export const pacienteService = {
         ? `${API_URL}/visitas/${visitaId}`
         : `${API_URL}/pacientes/`;
 
-      const method = visitaId ? "PUT" : "POST";
+      const method = visitaId ? "PATCH" : "POST";
 
       const response = await fetch(url, {
         method: method,
@@ -20,7 +20,11 @@ export const pacienteService = {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Error al procesar la solicitud");
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        console.error("Error del servidor:", errorBody);
+        throw new Error(errorBody.detail || "Error al procesar la solicitud");
+      }
       return await response.json();
     } catch (error) {
       console.error("Error en el service:", error);
