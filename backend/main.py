@@ -160,7 +160,7 @@ def obtener_historial_visitas(paciente_id: int, db: Session = Depends(get_db)):
     """
     return db.query(models.Visita).filter(models.Visita.paciente_id == paciente_id).order_by(models.Visita.fecha_visita.desc()).all()
 
-@app.put("/visitas/{visita_id}")
+@app.patch("/visitas/{visita_id}")
 def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)):
     # 1. Buscar la visita existente
     visita_db = db.query(models.Visita).filter(models.Visita.id == visita_id).first()
@@ -168,14 +168,13 @@ def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="La visita no existe")
 
     try:
-        # 2. Actualizar los campos que vienen del Front
-        # Esto pisa los valores viejos (o nulls) con los nuevos (laboratorio, etc.)
         for key, value in datos.items():
             if hasattr(visita_db, key) and key not in ["id", "paciente_id", "fecha_visita"]:
-                setattr(visita_db, key, value)
+                # VALIDACIÓN: Solo se escribe si el valor actual es None o vacío
+                valor_actual = getattr(visita_db, key)
+                if valor_actual is None or valor_actual == "":
+                    setattr(visita_db, key, value)
 
-        # 3. Recalcular la IA con los nuevos datos
-        # Ahora que tenemos laboratorio, la etapa será 2
         datos_ia = {
             "edad": visita_db.edad,
             "genero": visita_db.genero,
@@ -222,7 +221,6 @@ def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)
         
         print(f">>> [DB UPDATE] Visita {visita_id} actualizada. Nuevo score: {prob_final}")
         
-        # Devolvemos el paciente relacionado para que el front no rompa
         return {
             "id": visita_db.paciente.id,
             "dni": visita_db.paciente.dni,
