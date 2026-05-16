@@ -102,29 +102,39 @@
             >
               2. Antecedentes Médicos
             </h3>
-            <v-row>
-              <v-col cols="6" md="3">
+
+            <v-row class="mb-4">
+              <v-col cols="6" md="4">
                 <div class="label-info">DIABETES</div>
                 <div class="text-body-1">
                   {{ traducirOpcion(paciente.diabetes, "diabetes") }}
                 </div>
               </v-col>
-              <v-col cols="6" md="3">
+              <v-col cols="6" md="4">
                 <div class="label-info">HIPERTENSIÓN</div>
                 <div class="text-body-1">
                   {{ traducirOpcion(paciente.hipertension) }}
                 </div>
               </v-col>
-              <v-col cols="6" md="3">
+              <v-col cols="6" md="4">
                 <div class="label-info">PROBLEMAS RENALES</div>
                 <div class="text-body-1">
                   {{ traducirOpcion(paciente.riñones_debiles_fallando) }}
                 </div>
               </v-col>
-              <v-col cols="6" md="3">
+            </v-row>
+
+            <v-row>
+              <v-col cols="6" md="4">
                 <div class="label-info">HISTORIAL DE TABAQUISMO</div>
                 <div class="text-body-1">
                   {{ traducirBinario(paciente.fumo_100_cigarrillos) }}
+                </div>
+              </v-col>
+              <v-col cols="6" md="4">
+                <div class="label-info">ASMA</div>
+                <div class="text-body-1">
+                  {{ traducirOpcion(paciente.asma) }}
                 </div>
               </v-col>
             </v-row>
