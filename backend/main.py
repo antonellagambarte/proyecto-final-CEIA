@@ -38,7 +38,7 @@ def get_db():
 def home():
     return {"message": "Backend CardioPredict activo con SQLite (Relacional Visitas)"}
 
-@app.post("/pacientes/predecir")
+@app.post("/pacientes/predecir", summary="Realizar una predicción")
 def predecir_al_vuelo(datos: dict, preliminar: bool = False):
     try:
         # MAPEO: Traducimos del lenguaje del Front al lenguaje del Modelo
@@ -153,12 +153,18 @@ def obtener_pacientes(top: int = None, db: Session = Depends(get_db)):
         return query.limit(top).all()
     return query.all()
 
-@app.get("/pacientes/{paciente_id}/visitas", response_model=list[schemas.Visita])
+@app.get("/pacientes/{dni}/visitas", response_model=list[schemas.Visita])
 def obtener_historial_visitas(paciente_id: int, db: Session = Depends(get_db)):
     """
     Trae todas las consultas médicas de un paciente específico.
     """
-    return db.query(models.Visita).filter(models.Visita.paciente_id == paciente_id).order_by(models.Visita.fecha_visita.desc()).all()
+    paciente = db.query(models.Paciente).filter(models.Paciente.dni == dni).first()
+    
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado con el DNI proporcionado")
+    
+    # Retornamos las visitas usando el id que encontramos internamente
+    return db.query(models.Visita).filter(models.Visita.paciente_id == paciente.id).order_by(models.Visita.fecha_visita.desc()).all()
 
 @app.patch("/visitas/{visita_id}")
 def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)):

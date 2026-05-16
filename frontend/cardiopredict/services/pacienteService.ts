@@ -44,11 +44,9 @@ export const pacienteService = {
     }
   },
 
-  async obtenerVisitas(pacienteId: number) {
+  async obtenerVisitas(dni: string) {
     try {
-      const response = await fetch(
-        `${API_URL}/pacientes/${pacienteId}/visitas`
-      );
+      const response = await fetch(`${API_URL}/pacientes/${dni}/visitas`);
       if (!response.ok) throw new Error("Error al obtener visitas");
       return await response.json();
     } catch (error) {
