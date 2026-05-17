@@ -76,7 +76,7 @@ def predecir_al_vuelo(datos: dict, preliminar: bool = False):
             etapa_a_usar = 2 if (crea is not None and str(crea).strip() != "" and float(crea) > 0) else 1
         
         # Llamada al predictor
-        prob_calculada, influencias = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_a_usar)
+        prob_calculada, influencias, base_v = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_a_usar)
         
         # SÚPER IMPORTANTE: Casteo a float para evitar errores de serialización de NumPy
         prob_final = float(prob_calculada)
@@ -84,6 +84,7 @@ def predecir_al_vuelo(datos: dict, preliminar: bool = False):
         return {
             "probabilidad": prob_final,
             "riesgo": "Alto" if prob_final >= 0.4 else "Bajo",
+            "valor_base": base_v,
             "etapa_aplicada": etapa_a_usar,
             "influencias": influencias
         }
@@ -99,7 +100,7 @@ def guardar_visita_paciente(paciente_in: schemas.PacienteCreate, db: Session = D
     etapa = 2 if datos_dict.get("creatinina") else 1
     datos_ia = {k: v for k, v in datos_dict.items() if k not in ["dni", "nombre", "apellido"]}
     
-    score_ia_bruto, influencias = predictor.ejecutar_prediccion(datos_ia, etapa=etapa)
+    score_ia_bruto, influencias, base_v = predictor.ejecutar_prediccion(datos_ia, etapa=etapa)
     score_ia = float(score_ia_bruto)
 
     try:
@@ -124,9 +125,11 @@ def guardar_visita_paciente(paciente_in: schemas.PacienteCreate, db: Session = D
         if etapa == 1:
             nueva_visita.riesgo_preliminar = score_ia
             nueva_visita.influencias_preliminares = influencias
+            nueva_visita.base_value_preliminar = base_v
         else:
             nueva_visita.riesgo_final = score_ia
             nueva_visita.influencias_finales = influencias
+            nueva_visita.base_value_final = base_v
         
         db.add(nueva_visita)
         db.commit()
@@ -209,7 +212,7 @@ def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)
         # Decidimos etapa: si hay creatinina, es Etapa 2 (Final)
         etapa_actual = 2 if (visita_db.creatinina is not None) else 1
         
-        prob_calculada, influencias = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_actual)
+        prob_calculada, influencias, base_v = predictor.ejecutar_prediccion(datos_ia, etapa=etapa_actual)
         prob_final = float(prob_calculada)
 
         # 4. Guardar resultados de la IA
@@ -217,9 +220,11 @@ def actualizar_visita(visita_id: int, datos: dict, db: Session = Depends(get_db)
         if etapa_actual == 2:
             visita_db.riesgo_final = prob_final
             visita_db.influencias_finales = influencias
+            visita_db.base_value_final = base_v
         else:
             visita_db.riesgo_preliminar = prob_final
             visita_db.influencias_preliminares = influencias
+            visita_db.base_value_preliminar = base_v
 
         db.commit()
         db.refresh(visita_db)
@@ -258,6 +263,8 @@ def obtener_detalle_visita(visita_id: int, db: Session = Depends(get_db)):
         "riesgo_final": visita.riesgo_final,
         "influencias_preliminares": visita.influencias_preliminares,
         "influencias_finales": visita.influencias_finales,
+        "base_value_preliminar": visita.base_value_preliminar,
+        "base_value_final": visita.base_value_final,
         "paciente": {
             "nombre": visita.paciente.nombre,
             "apellido": visita.paciente.apellido,

@@ -39,6 +39,9 @@ class Visita(VisitaBase):
     riesgo_preliminar: Optional[float] = None
     riesgo_final: Optional[float] = None
     probabilidad_riesgo: Optional[float] = None
+    base_value_preliminar: Optional[float] = None
+    base_value_final: Optional[float] = None
+    
 
     class Config:
         from_attributes = True

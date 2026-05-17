@@ -1,34 +1,35 @@
 <template>
-  <v-container
-    fluid
-    class="pa-0"
-    style="min-height: 100vh; background-color: #1a1a1a"
-  >
+  <v-container fluid class="main-container pa-0">
     <v-sheet color="transparent" class="px-12 pt-12 pb-6">
       <v-btn text small dark @click="$router.go(-1)" class="mb-4 grey--text">
-        <v-icon left small>fas fa-arrow-left</v-icon> Volver al informe
+        <v-icon left small>fas fa-arrow-left</v-icon>
+        Volver al informe
       </v-btn>
 
       <div class="d-flex align-center">
         <h2 class="white--text text-h4 font-weight-thin">
           Análisis Comparativo de Riesgo
         </h2>
+
         <v-chip class="ml-4" color="cyan" small label dark>
           {{ paciente.apellido }}, {{ paciente.nombre }}
         </v-chip>
       </div>
     </v-sheet>
 
-    <v-row class="px-12 pb-12">
-      <v-col cols="12" md="4">
+    <!-- TARJETAS ARRIBA -->
+    <v-row class="px-12 pb-6">
+      <!-- PRELIMINAR -->
+      <v-col cols="12" md="6">
         <v-card
           dark
           color="#252525"
-          class="pa-6 mb-4"
+          class="pa-6 h-100"
           rounded="lg"
           style="border-left: 5px solid #ffb300"
         >
           <div class="grey--text text-caption mb-1">PREDICCIÓN PRELIMINAR</div>
+
           <div
             :class="[
               'text-h4 font-weight-black',
@@ -43,18 +44,23 @@
                 : "RIESGO BAJO"
             }}
           </div>
+
           <div class="text-caption grey--text mt-1">Basado en hábitos</div>
         </v-card>
+      </v-col>
 
+      <!-- FINAL -->
+      <v-col cols="12" md="6">
         <v-card
           v-if="resultado.final.probabilidad"
           dark
           color="#252525"
-          class="pa-6"
+          class="pa-6 h-100"
           rounded="lg"
           style="border-left: 5px solid #7e57c2"
         >
           <div class="grey--text text-caption mb-1">PREDICCIÓN FINAL</div>
+
           <div
             :class="[
               'text-h4 font-weight-black',
@@ -69,15 +75,21 @@
                 : "RIESGO BAJO"
             }}
           </div>
+
           <v-divider class="my-3 grey darken-3"></v-divider>
+
           <div class="text-caption grey--text">Análisis con biomarcadores</div>
         </v-card>
       </v-col>
+    </v-row>
 
-      <v-col cols="12" md="8">
+    <!-- GRÁFICO ABAJO -->
+    <v-row class="px-4 pb-12">
+      <v-col cols="12">
         <v-card dark color="#252525" class="pa-8" rounded="lg">
           <v-tabs v-model="tab" color="cyan" grow class="mb-6">
-            <v-tab>Factores que influyen en el resultado preliminar</v-tab>
+            <v-tab> Factores que influyen en el resultado preliminar </v-tab>
+
             <v-tab v-if="resultado.final.influencias.length">
               Factores que influyen en el resultado final
             </v-tab>
@@ -101,16 +113,19 @@
               <v-icon x-small color="cyan lighten-2" class="mr-1">
                 fas fa-arrow-down
               </v-icon>
+
               Disminuye la predicción estimada
             </div>
 
             <div class="red--text text--lighten-2 caption">
               Aumenta la predicción estimada
+
               <v-icon x-small color="red lighten-2" class="ml-1">
                 fas fa-arrow-up
               </v-icon>
             </div>
           </div>
+
           <div class="grey--text text--lighten-1 caption mt-4">
             Las contribuciones se basan en valores SHAP, que explican cómo cada
             variable modifica la predicción respecto a un valor base del modelo.
@@ -224,7 +239,6 @@ export default {
 
 <style scoped>
 .grafico-scroll-container {
-  max-height: 450px;
   overflow-y: auto;
   padding-right: 15px;
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
@@ -249,5 +263,52 @@ export default {
 
 .v-tabs-items {
   background-color: transparent !important;
+}
+
+.main-container {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: #1a1a1a;
+  padding-left: 256px;
+
+  /* scroll suave */
+  scroll-behavior: smooth;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 2%,
+    black 98%,
+    transparent 100%
+  );
+}
+
+/* Chrome / Edge / Opera */
+.main-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.main-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* opcional: esconder flechas */
+.main-container::-webkit-scrollbar-button {
+  display: none;
 }
 </style>

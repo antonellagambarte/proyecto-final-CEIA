@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import numpy as np
 import joblib
-from sklearn.ensemble import RandomForestClassifier
 
 # --- SECCIÓN 1: Rutas y Configuración ---
 BASE_DIR = os.path.dirname(__file__)
@@ -20,20 +19,19 @@ VARS_LOGARITMICAS = [
 UMBRAL_ETAPA1 = 0.4
 UMBRAL_ETAPA2 = 0.4
 
-# MAPEO ACTUALIZADO: Agregadas variantes 2.0, 3.0 y 9.0 para consolidar
 MAPA_NOMBRES = {
-    'edad': 'Edad', 'genero': 'Género', 'fumo_100_cigarrillos': 'Tabaquismo',
+    'edad': 'Edad', 'genero': 'Género', 'fumo_100_cigarrillos': 'Hábito de tabaquismo',
     'actividad_deportiva_moderada_x_semana': 'Actividad Física',
     'consumo_alcohol_ultimo_año': 'Consumo Alcohol', 'anhedonia': 'Anhedonia',
     'bmi': 'IMC', 'presion_sistolica_final': 'P. Sistólica',
     'presion_diastolica_final': 'P. Diastólica', 
-    'fam_cardio_2.0': 'Ant. Familiar Cardio', 'fam_cardio_9.0': 'Ant. Familiar Cardio',
-    'fam_diabetes_2.0': 'Ant. Familiar Diabetes', 'fam_diabetes_9.0': 'Ant. Familiar Diabetes',
-    'fam_asma_2.0': 'Ant. Familiar Asma', 'fam_asma_9.0': 'Ant. Familiar Asma',
-    'riñones_debiles_fallando_2.0': 'Problemas Renales', 'riñones_debiles_fallando_9.0': 'Problemas Renales',
-    'hipertension_2': 'Hipertensión', 'hipertension_9': 'Hipertensión',
-    'diabetes_2.0': 'Diabetes', 'diabetes_3.0': 'Diabetes', 'diabetes_9.0': 'Diabetes',
-    'asma_2.0': 'Asma', 'asma_9.0': 'Asma',
+    'fam_cardio': 'antecedentes familiares de cardio',
+    'fam_diabetes': 'antecedentes familiares de diabetes',
+    'fam_asma': 'antecedentes familiares de asma',
+    'riñones_debiles_fallando': 'problemas renales',
+    'hipertension': 'hipertensión',
+    'diabetes': 'diabetes',
+    'asma': 'asma',
     'colesterol_total': 'Colesterol', 'hdl': 'HDL',
     'trigliceridos': 'Triglicéridos', 'proteina_c': 'Prot. C Reactiva',
     'hemoglobina': 'Hemoglobina', 'creatinina': 'Creatinina',
@@ -58,23 +56,22 @@ except Exception as e:
 
 # --- SECCIÓN 4: Función de Predicción ---
 def ejecutar_prediccion(datos_dict, etapa=1):
-    print(f"\n>>> [DEBUG] Datos recibidos del Frontend (Etapa {etapa}):")
-    print(datos_dict)
-    
     df = pd.DataFrame([datos_dict])
     modelo = modelo1 if etapa == 1 else modelo2
     explainer = explainer1 if etapa == 1 else explainer2
     
     if modelo is None: 
-        return 0.0, []
+        return 0.0, [], 0.0
+
+    # Guardamos copia para identificar el estado clínico original (1, 2 o 9)
+    datos_originales = datos_dict.copy()
 
     if 'peso' in df.columns and 'altura' in df.columns:
         try:
             p = float(df['peso'].iloc[0])
             a = float(df['altura'].iloc[0])
             df['bmi'] = p / (a ** 2) if a > 0 else 0
-        except:
-            df['bmi'] = 0
+        except: df['bmi'] = 0
 
     for col in VARS_LOGARITMICAS:
         if col in df.columns:
@@ -85,12 +82,11 @@ def ejecutar_prediccion(datos_dict, etapa=1):
             try:
                 nuevas_cols = encoder_obj.get_feature_names_out([col_nombre])
                 df[nuevas_cols] = encoder_obj.transform(df[[col_nombre]])
-            except: 
-                pass
+            except: pass
 
     columnas_entrenamiento = getattr(modelo, "feature_names_in_", [])
     df_ia = df.reindex(columns=columnas_entrenamiento).fillna(0)
-    
+
     if scaler:
         try:
             VARS_SCALER = scaler.feature_names_in_
@@ -98,49 +94,70 @@ def ejecutar_prediccion(datos_dict, etapa=1):
             valores_escalados = scaler.transform(df_para_escalar)
             df_escalado_final = pd.DataFrame(valores_escalados, columns=VARS_SCALER)
             for col in df_ia.columns:
-                if col in VARS_SCALER: 
-                    df_ia[col] = df_escalado_final[col].values
-        except Exception as e:
-            print(f">>> [DEBUG] Error en Scaler: {e}")
+                if col in VARS_SCALER: df_ia[col] = df_escalado_final[col].values
+        except Exception as e: print(f"Error Scaler: {e}")
 
     try:
-        df_ia = df_ia.reindex(columns=columnas_entrenamiento).fillna(0)
         prob_raw = modelo.predict_proba(df_ia)[0][1]
         probabilidad = round(float(prob_raw), 4)
-    except Exception as e:
-        print(f">>> [DEBUG] Error fatal en predict_proba: {e}")
-        return 0.0, []
+    except: return 0.0, [], 0.0
 
     influencias = []
+    base_value = 0.0
     try:
         if explainer:
             raw_shap_values = explainer.shap_values(df_ia)
+            
+            # Ajuste para Random Forest (Clase 1)
             if isinstance(raw_shap_values, list):
                 shap_values_final = raw_shap_values[1][0]
+                base_value = float(explainer.expected_value[1])
             else:
-                shap_values_final = raw_shap_values[0, :, 1] if len(raw_shap_values.shape) == 3 else raw_shap_values[0]
+                if len(raw_shap_values.shape) == 3:
+                    shap_values_final = raw_shap_values[0, :, 1]
+                    base_value = float(explainer.expected_value[1])
+                else:
+                    shap_values_final = raw_shap_values[0]
+                    base_value = float(explainer.expected_value)
 
             acumulado = {}
             for col, val in zip(columnas_entrenamiento, shap_values_final):
-                nombre = MAPA_NOMBRES.get(col, col)
-                acumulado[nombre] = acumulado.get(nombre, 0) + float(val)
+                # Detectar nombre base sin sufijos de dummy
+                nombre_base = col
+                for sufijo in ['_2.0', '_9.0', '_2', '_9', '_3.0']:
+                    if col.endswith(sufijo):
+                        nombre_base = col.replace(sufijo, '')
+                        break
                 
-            total_abs = sum(abs(v) for v in acumulado.values())
+                # Acumulamos (Suma de dummies = Aproximación del impacto de la variable)
+                acumulado[nombre_base] = acumulado.get(nombre_base, 0) + float(val)
 
-            for nombre, total_val in acumulado.items():
-                if abs(total_val) > 0.001: 
+            total_abs = sum(abs(v) for v in acumulado.values())
+            for var_key, total_val in acumulado.items():
+                if abs(total_val) > 0.0001:
+                    nombre_display = MAPA_NOMBRES.get(var_key, var_key)
+                    val_original = datos_originales.get(var_key)
+
+                    # Lógica de construcción de etiqueta clínica
+                    if var_key in ['fam_cardio', 'fam_diabetes', 'fam_asma', 'riñones_debiles_fallando', 'hipertension', 'diabetes', 'asma', 'fumo_100_cigarrillos']:
+                        if val_original == 1 or val_original == 1.0:
+                            nombre_display = f"Tiene {nombre_display}"
+                        elif val_original == 2 or val_original == 2.0:
+                            nombre_display = f"No tiene {nombre_display}"
+                        elif val_original == 9 or val_original == 9.0:
+                            nombre_display = f"Desconoce {nombre_display}"
+
                     porcentaje = (abs(total_val) / total_abs) * 100 if total_abs > 0 else 0
                     influencias.append({
-                        "feature": nombre,
+                        "feature": nombre_display,
                         "valor": round(total_val, 4),
                         "porcentaje": round(porcentaje, 2)
                     })
-            # ---------------------------------------
             
             influencias = sorted(influencias, key=lambda x: abs(x["valor"]), reverse=True)
-        else:
-            print(">>> [DEBUG] Explainer no disponible.")
-    except Exception as e:
-        print(f">>> [DEBUG] SHAP falló: {e}")
-
-    return probabilidad, influencias
+    except Exception as e: print(f"SHAP Error: {e}")
+    print("BASE:", base_value)
+    print("SHAP SUM:", np.sum(shap_values_final))
+    print("TOTAL:", base_value + np.sum(shap_values_final))
+    print("PROB:", probabilidad)
+    return probabilidad, influencias, round(base_value, 4)

@@ -57,5 +57,7 @@ class Visita(Base):
     probabilidad_riesgo = Column(Float, nullable=True)
     influencias_preliminares = Column(JSON, nullable=True)
     influencias_finales = Column(JSON, nullable=True)
+    base_value_preliminar = Column(Float, nullable=True)
+    base_value_final = Column(Float, nullable=True)
 
     paciente = relationship("Paciente", back_populates="visitas")
