@@ -31,10 +31,50 @@
                   left: item.left + '%',
                   width: item.width + '%',
                 }"
+              ></div>
+
+              <span
+                class="bar-text"
+                :class="{
+                  'inside-text': item.width >= 5,
+                  'outside-text': item.width < 5,
+                  'positive-text': item.valor > 0,
+                  'negative-text': item.valor < 0,
+                }"
+                :style="{
+                  left:
+                    item.width >= 5
+                      ? item.left + item.width / 2 + '%'
+                      : item.valor > 0
+                      ? item.left + item.width + '%'
+                      : item.left + '%',
+                }"
               >
-                <span class="bar-text">
-                  {{ formatValor(item.valor) }}
-                </span>
+                {{ formatValor(item.valor) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- EJE -->
+          <div class="axis-row">
+            <div class="axis-line"></div>
+
+            <div
+              v-for="(tick, i) in axisTicks"
+              :key="'tick-' + i"
+              class="axis-marker"
+              :style="{ left: tick.left + '%' }"
+            >
+              <div class="axis-tick"></div>
+              <div class="axis-label">
+                {{ tick.valor.toFixed(3) }}
+              </div>
+            </div>
+
+            <div class="axis-base-marker" :style="{ left: baseLineLeft + '%' }">
+              <div class="axis-tick base-tick"></div>
+              <div class="axis-label base-label">
+                Base: {{ baseValue.toFixed(3) }}
               </div>
             </div>
           </div>
@@ -45,6 +85,8 @@
 </template>
 
 <script>
+const ESCALA = 85;
+
 export default {
   props: {
     influencias: {
@@ -56,12 +98,14 @@ export default {
       type: Number,
       default: 0.44,
     },
+    prediccion: {
+      type: Number,
+      default: null,
+    },
   },
 
   computed: {
     waterfallData() {
-      const ESCALA = 85;
-
       const ordenadas = [...this.influencias].sort(
         (a, b) => Math.abs(a.valor) - Math.abs(b.valor)
       );
@@ -86,15 +130,7 @@ export default {
         .sort((a, b) => b.magnitud - a.magnitud)
         .slice(0, 10);
 
-      const todosLosValores = [
-        this.baseValue,
-        ...top10.map((x) => x.inicio),
-        ...top10.map((x) => x.fin),
-      ];
-
-      const min = Math.min(...todosLosValores);
-      const max = Math.max(...todosLosValores);
-      const rango = Math.max(max - min, 0.05);
+      const { min, rango } = this.getAxisInfo(top10);
 
       return top10.map((item) => {
         const startPercent = ((item.inicio - min) / rango) * ESCALA;
@@ -108,24 +144,45 @@ export default {
       });
     },
 
+    axisInfo() {
+      return this.getAxisInfo(this.waterfallData);
+    },
+
     baseLineLeft() {
-      const valores = [
-        this.baseValue,
-        ...this.waterfallData.map((x) => x.inicio),
-        ...this.waterfallData.map((x) => x.fin),
-      ];
+      const { min, rango } = this.axisInfo;
+      return ((this.baseValue - min) / rango) * ESCALA;
+    },
 
-      const min = Math.min(...valores);
-      const max = Math.max(...valores);
-      const rango = Math.max(max - min, 0.05);
+    axisTicks() {
+      const { min, rango } = this.axisInfo;
 
-      return ((this.baseValue - min) / rango) * 85;
+      return [0, 0.25, 0.5, 0.75, 1].map((p) => ({
+        valor: min + rango * p,
+        left: p * ESCALA,
+      }));
     },
   },
 
   methods: {
     formatValor(valor) {
       return Math.abs(valor).toFixed(4);
+    },
+
+    getAxisInfo(items) {
+      console.log("props: ", this.$props);
+
+      const valores = [
+        this.baseValue,
+        this.prediccion,
+        ...items.map((x) => x.inicio),
+        ...items.map((x) => x.fin),
+      ].filter((v) => v !== null && v !== undefined);
+
+      const min = Math.min(...valores);
+      const max = Math.max(...valores);
+      const rango = Math.max(max - min, 0.05);
+
+      return { min, max, rango };
     },
   },
 };
@@ -138,8 +195,8 @@ export default {
 }
 
 .labels-column {
-  width: 145px;
-  min-width: 145px;
+  width: 170px;
+  min-width: 170px;
   flex-shrink: 0;
   z-index: 2;
   background: #252525;
@@ -162,7 +219,7 @@ export default {
 }
 
 .waterfall-chart {
-  min-width: 760px;
+  min-width: 730px;
   width: calc(100% - 32px);
   margin-left: 16px;
   margin-right: 16px;
@@ -198,7 +255,7 @@ export default {
   display: flex;
   align-items: center;
   transition: all 0.4s ease;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .negative-bar {
@@ -222,10 +279,78 @@ export default {
 }
 
 .bar-text {
-  color: white;
+  position: absolute;
+  top: 50%;
   font-size: 0.78rem;
   font-weight: 600;
-  z-index: 2;
   white-space: nowrap;
+  z-index: 5;
+}
+
+.inside-text {
+  color: white;
+  transform: translate(-50%, -50%);
+}
+
+.outside-text {
+  color: white;
+}
+
+.positive-text.outside-text {
+  transform: translate(8px, -50%);
+}
+
+.negative-text.outside-text {
+  transform: translate(calc(-100% - 8px), -50%);
+}
+
+/* ===== EJE ===== */
+
+.axis-row {
+  position: relative;
+  height: 40px;
+  margin-top: 8px;
+}
+
+.axis-line {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 85%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.axis-marker,
+.axis-base-marker {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.axis-tick {
+  width: 1px;
+  height: 9px;
+  background: rgba(255, 255, 255, 0.35);
+  margin: 0 auto 4px auto;
+}
+
+.axis-label {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.base-tick {
+  width: 2px;
+  height: 12px;
+  background: rgba(0, 229, 255, 0.75);
+}
+
+.base-label {
+  color: rgba(0, 229, 255, 0.9);
+  font-weight: 600;
+  position: relative;
+  top: 12px;
 }
 </style>

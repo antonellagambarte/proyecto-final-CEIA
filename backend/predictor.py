@@ -6,8 +6,8 @@ import joblib
 
 # --- SECCIÓN 1: Rutas y Configuración ---
 BASE_DIR = os.path.dirname(__file__)
-PATH_E1 = os.path.join(BASE_DIR, 'modelos', 'random_forest_optuna_under_etapa1.joblib')
-PATH_E2 = os.path.join(BASE_DIR, 'modelos', 'random_forest_optuna_under_etapa2.joblib')
+PATH_E1 = os.path.join(BASE_DIR, 'modelos', 'rf_under_optuna_model_etapa1.joblib')
+PATH_E2 = os.path.join(BASE_DIR, 'modelos', 'rf_under_optuna_model_etapa2.joblib')
 PATH_ENCODERS = os.path.join(BASE_DIR, "encoders", "encoders_categoricos.joblib")
 PATH_SCALER = os.path.join(BASE_DIR, "scalers", "scaler_cardio.joblib")
 
@@ -20,14 +20,14 @@ UMBRAL_ETAPA1 = 0.4
 UMBRAL_ETAPA2 = 0.4
 
 MAPA_NOMBRES = {
-    'edad': 'Edad', 'genero': 'Género', 'fumo_100_cigarrillos': 'Hábito de tabaquismo',
+    'edad': 'Edad', 'genero': 'Género', 'fumo_100_cigarrillos': 'Ant. de tabaquismo',
     'actividad_deportiva_moderada_x_semana': 'Actividad Física',
     'consumo_alcohol_ultimo_año': 'Consumo Alcohol', 'anhedonia': 'Anhedonia',
     'bmi': 'IMC', 'presion_sistolica_final': 'P. Sistólica',
     'presion_diastolica_final': 'P. Diastólica', 
-    'fam_cardio': 'antecedentes familiares de cardio',
-    'fam_diabetes': 'antecedentes familiares de diabetes',
-    'fam_asma': 'antecedentes familiares de asma',
+    'fam_cardio': 'ant. familiares ECV',
+    'fam_diabetes': 'ant. familiares de diabetes',
+    'fam_asma': 'ant. familiares de asma',
     'riñones_debiles_fallando': 'problemas renales',
     'hipertension': 'hipertensión',
     'diabetes': 'diabetes',

@@ -8,11 +8,13 @@
 
       <div class="d-flex align-center">
         <h2 class="white--text text-h4 font-weight-thin">
-          Análisis Comparativo de Riesgo
+          Análisis comparativo de riesgo
         </h2>
 
-        <v-chip class="ml-4" color="cyan" small label dark>
-          {{ paciente.apellido }}, {{ paciente.nombre }}
+        <v-chip class="ml-4" color="rgb(67, 160, 71)" small label dark>
+          <span class="black--text">
+            {{ paciente.apellido }}, {{ paciente.nombre }}
+          </span>
         </v-chip>
       </div>
     </v-sheet>
@@ -45,7 +47,9 @@
             }}
           </div>
 
-          <div class="text-caption grey--text mt-1">Basado en hábitos</div>
+          <div class="text-caption grey--text mt-1">
+            Basado en historia clínica
+          </div>
         </v-card>
       </v-col>
 
@@ -76,9 +80,9 @@
             }}
           </div>
 
-          <v-divider class="my-3 grey darken-3"></v-divider>
-
-          <div class="text-caption grey--text">Análisis con biomarcadores</div>
+          <div class="text-caption grey--text">
+            Basado en historia clínica y resultados de laboratorio
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -101,7 +105,11 @@
               :key="index"
             >
               <div class="grafico-scroll-container">
-                <GraficoInfluencia :influencias="res.influencias" />
+                <GraficoInfluencia
+                  :influencias="res.influencias"
+                  :base-value="res.baseValue"
+                  :prediccion="res.probabilidad"
+                />
               </div>
             </v-tab-item>
           </v-tabs-items>
@@ -207,21 +215,27 @@ export default {
             fam_diabetes: visita.fam_diabetes,
             fam_asma: visita.fam_asma,
           };
+
+          console.log("VISITA; ", visita);
+
           const res = await pacienteService.predecirAlVuelo(payload, true);
           this.resultado.preliminar = {
             probabilidad: res.probabilidad,
             influencias: res.influencias || [],
+            baseValue: visita.base_value_preliminar || 0.44,
           };
         } else {
           this.resultado.preliminar = {
             probabilidad: visita.riesgo_preliminar || 0,
             influencias: visita.influencias_preliminares || [],
+            baseValue: visita.base_value_preliminar || 0.44,
           };
         }
-
+        console.log("VISITA; ", visita);
         this.resultado.final = {
           probabilidad: visita.riesgo_final || 0,
           influencias: visita.influencias_finales || [],
+          baseValue: visita.base_value_final || 0.44,
         };
 
         if (this.resultado.final.probabilidad > 0) {
