@@ -72,7 +72,7 @@
               RIESGO {{ resultadoIA.riesgo.toUpperCase() }}
             </div>
           </div>
-          <div v-else>Los datos han sido sincronizados correctamente.</div>
+          <div v-else>Los datos han sido guardados correctamente.</div>
         </v-card-text>
         <v-card-actions class="justify-center mt-2 pb-4">
           <v-btn
