@@ -31,7 +31,7 @@
           >
           <v-btn
             color="success"
-            class="px-6 custom-btn"
+            class="px-6 custom-btn black--text"
             @click="confirmarGuardado"
             >SÍ, GUARDAR</v-btn
           >
@@ -85,7 +85,7 @@
           >
           <v-btn
             color="success"
-            class="px-10 custom-btn ml-2"
+            class="px-10 custom-btn ml-2 black--text"
             @click="cerrarModal"
             >ACEPTAR</v-btn
           >
@@ -633,10 +633,12 @@ export default {
           this.visitaIdActual ||
           (this.datosIniciales ? this.datosIniciales.id : null);
 
-        const res = await pacienteService.guardar(
-          this.prepararPayload(),
-          idAEditar
-        );
+        // Si existe un id a editar (PATCH), enviamos SOLO los datos de laboratorio
+        // para evitar sobreescribir campos personales/clinicos ya persistidos.
+        const payload = idAEditar
+          ? this.prepararPayloadLabs()
+          : this.prepararPayload();
+        const res = await pacienteService.guardar(payload, idAEditar);
 
         if (res) {
           // 2. Mantenemos el ID de la visita vivo para el siguiente clic en "Guardar"
@@ -706,6 +708,20 @@ export default {
         presion_diastolica_final: parseFloat(this.form.presion_dis) || null,
 
         // Laboratorio
+        colesterol_total: parseFloat(this.form.colesterol) || null,
+        hdl: parseFloat(this.form.hdl) || null,
+        trigliceridos: parseFloat(this.form.trigliceridos) || null,
+        creatinina: parseFloat(this.form.creatinina) || null,
+        proteina_c: parseFloat(this.form.pcr) || null,
+        hemoglobina: parseFloat(this.form.hemoglobina) || null,
+        acido_urico: parseFloat(this.form.acido_urico) || null,
+        potasio: parseFloat(this.form.potasio) || null,
+      };
+    },
+
+    prepararPayloadLabs() {
+      // Devuelve únicamente los campos de laboratorio que actualizan una visita existente
+      return {
         colesterol_total: parseFloat(this.form.colesterol) || null,
         hdl: parseFloat(this.form.hdl) || null,
         trigliceridos: parseFloat(this.form.trigliceridos) || null,

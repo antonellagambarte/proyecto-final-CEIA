@@ -34,10 +34,6 @@ def get_db():
 
 # --- RUTAS ---
 
-# @app.get("/")
-# def home():
-#     return {"message": "Backend CardioPredict activo con SQLite (Relacional Visitas)"}
-
 @app.post("/pacientes/predecir", summary="Realizar una predicción")
 def predecir_al_vuelo(datos: dict, preliminar: bool = False):
     try:
