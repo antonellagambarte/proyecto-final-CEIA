@@ -119,10 +119,12 @@ export default {
     async cargarPaciente() {
       this.loading = true;
       try {
-        const res = await pacienteService.buscarPorDni(this.dni);
-        // 1. Obtenemos el objeto paciente (el primero si es un array)
-        const pacienteData = Array.isArray(res) ? res[0] : res;
+        const [res, visitas] = await Promise.all([
+          pacienteService.buscarPorDni(this.dni),
+          pacienteService.obtenerVisitas(this.dni),
+        ]);
 
+        const pacienteData = Array.isArray(res) ? res[0] : res;
         if (!pacienteData) return;
 
         const inversoMapa = (v) => {
@@ -133,47 +135,42 @@ export default {
           return null;
         };
 
-        // 2. Mapeamos las VISITAS del paciente, no el paciente en sí
-        this.historial = pacienteData.visitas.map((v) => ({
-          // Mantenemos los datos del paciente para que los botones de VER DATOS funcionen
+        // 2. Obtenemos las visitas desde el endpoint dedicado por DNI
+        this.historial = visitas.map((v) => ({
           dni: pacienteData.dni,
           nombre: pacienteData.nombre,
           apellido: pacienteData.apellido,
-
-          // Datos de la visita (ID, campos clínicos y FECHAS)
           ...v,
           genero: v.genero === 0 ? "Masculino" : "Femenino",
           diabetico: inversoMapa(v.diabetes),
           hipertension: inversoMapa(v.hipertension),
           asma: inversoMapa(v.asma),
           renales: inversoMapa(v.riñones_debiles_fallando),
-
           alcohol: v.consumo_alcohol_ultimo_año,
           ejercicio: v.actividad_deportiva_moderada_x_semana,
           fumador: v.fumo_100_cigarrillos,
           anhedonia: v.anhedonia,
-
           fam_cardio: inversoMapa(v.fam_cardio),
           fam_diabetes: inversoMapa(v.fam_diabetes),
           fam_asma: inversoMapa(v.fam_asma),
-
           presion_sis: v.presion_sistolica_final,
           presion_dis: v.presion_diastolica_final,
           colesterol: v.colesterol_total,
           pcr: v.proteina_c,
-
-          // IMPORTANTE: Ahora usamos las fechas de la VISITA
           fecha_creacion: v.fecha_visita,
           fecha_actualizacion: v.fecha_actualizacion,
         }));
 
-        // 3. Ordenar por fecha de creación de la visita (de más reciente a más antigua)
         if (this.historial.length > 0) {
           this.historial.sort(
             (a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
           );
 
-          // Seteamos el nombre del paciente para la cabecera
+          this.paciente = {
+            apellido: pacienteData.apellido,
+            nombre: pacienteData.nombre,
+          };
+        } else {
           this.paciente = {
             apellido: pacienteData.apellido,
             nombre: pacienteData.nombre,

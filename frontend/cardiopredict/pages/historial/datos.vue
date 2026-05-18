@@ -334,26 +334,27 @@ export default {
     async cargarDatosPaciente(dni) {
       this.cargando = true;
       try {
-        const res = await pacienteService.buscarPorDni(dni);
-        const p = Array.isArray(res) ? res[0] : res;
+        const [res, visitas] = await Promise.all([
+          pacienteService.buscarPorDni(dni),
+          pacienteService.obtenerVisitas(dni),
+        ]);
 
-        if (p && p.visitas && p.visitas.length > 0) {
-          // 1. Intentamos obtener el ID de la visita desde la URL (si es que lo pasas por query)
-          const visitaIdDeUrl = this.$route.query.visitaId;
+        const pacienteInfo = Array.isArray(res) ? res[0] : res;
+        const visitaIdDeUrl = this.$route.query.visitaId;
 
-          let visitaSeleccionada;
+        let visitaSeleccionada;
+        if (visitaIdDeUrl) {
+          visitaSeleccionada = visitas.find((v) => v.id == visitaIdDeUrl);
+        }
 
-          if (visitaIdDeUrl) {
-            visitaSeleccionada = p.visitas.find((v) => v.id == visitaIdDeUrl);
-          }
+        if (!visitaSeleccionada && visitas.length > 0) {
+          visitaSeleccionada = visitas[visitas.length - 1];
+        }
 
-          if (!visitaSeleccionada) {
-            visitaSeleccionada = p.visitas[p.visitas.length - 1];
-          }
-
-          this.paciente = { ...p, ...visitaSeleccionada };
+        if (visitaSeleccionada) {
+          this.paciente = { ...pacienteInfo, ...visitaSeleccionada };
         } else {
-          this.paciente = p;
+          this.paciente = pacienteInfo || {};
         }
       } catch (e) {
         console.error("Error al cargar datos:", e);

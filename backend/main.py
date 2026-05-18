@@ -34,9 +34,9 @@ def get_db():
 
 # --- RUTAS ---
 
-@app.get("/")
-def home():
-    return {"message": "Backend CardioPredict activo con SQLite (Relacional Visitas)"}
+# @app.get("/")
+# def home():
+#     return {"message": "Backend CardioPredict activo con SQLite (Relacional Visitas)"}
 
 @app.post("/pacientes/predecir", summary="Realizar una predicción")
 def predecir_al_vuelo(datos: dict, preliminar: bool = False):
@@ -92,7 +92,7 @@ def predecir_al_vuelo(datos: dict, preliminar: bool = False):
         print(f"Error en endpoint predecir: {e}")
         return {"error": str(e), "probabilidad": 0}
 
-@app.post("/pacientes/", response_model=schemas.Paciente)
+@app.post("/pacientes/", response_model=schemas.Paciente, summary="Crea un paciente")
 def guardar_visita_paciente(paciente_in: schemas.PacienteCreate, db: Session = Depends(get_db)):
     datos_dict = paciente_in.model_dump()
     
@@ -157,9 +157,9 @@ def obtener_pacientes(top: int = None, db: Session = Depends(get_db)):
     return query.all()
 
 @app.get("/pacientes/{dni}/visitas", response_model=list[schemas.Visita])
-def obtener_historial_visitas(paciente_id: int, db: Session = Depends(get_db)):
+def obtener_historial_visitas(dni: str, db: Session = Depends(get_db)):
     """
-    Trae todas las consultas médicas de un paciente específico.
+    Trae todas las consultas médicas de un paciente específico por DNI.
     """
     paciente = db.query(models.Paciente).filter(models.Paciente.dni == dni).first()
     
