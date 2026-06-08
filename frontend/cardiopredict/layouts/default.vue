@@ -34,8 +34,8 @@
 
     <v-app-bar fixed app flat color="#1e1e1e" />
 
-    <v-main style="background-color: #121212; height: 100vh; overflow: hidden">
-      <v-container fluid class="pa-0">
+    <v-main style="background-color: #121212; overflow: hidden;">
+      <v-container fluid class="pa-0" style="height: 100%; overflow: hidden;">
         <Nuxt />
       </v-container>
     </v-main>
@@ -74,6 +74,14 @@ export default {
   },
 };
 </script>
+
+<style>
+html,
+body {
+  overflow: hidden !important;
+  height: 100%;
+}
+</style>
 
 <style scoped>
 .logo-sidebar-header {
