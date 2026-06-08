@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 
 class VisitaBase(BaseModel):
+    fecha_nacimiento: Optional[str] = None
     edad: Optional[float] = None
     genero: Optional[float] = None 
     fumo_100_cigarrillos: Optional[float] = None

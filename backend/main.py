@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import inspect, text
 from fastapi.middleware.cors import CORSMiddleware
-import models 
+import models
 import schemas
 from database import SessionLocal, engine
-import predictor 
+import predictor
 
 print("--- DEBUG PREDICTOR ---")
 print(f"Archivo cargado desde: {predictor.__file__}")
@@ -14,6 +15,13 @@ print("-----------------------")
 
 # Crear las tablas en el archivo SQLite
 models.Base.metadata.create_all(bind=engine)
+
+# Migración: agregar columna fecha_nacimiento si no existe
+with engine.connect() as _conn:
+    _cols = [c["name"] for c in inspect(engine).get_columns("visitas")]
+    if "fecha_nacimiento" not in _cols:
+        _conn.execute(text("ALTER TABLE visitas ADD COLUMN fecha_nacimiento VARCHAR"))
+        _conn.commit()
 
 app = FastAPI(title="CardioPredict API - SQLite Version")
 

@@ -88,6 +88,10 @@
                 </div>
               </v-col>
               <v-col cols="6" md="2">
+                <div class="label-info">FECHA DE NACIMIENTO</div>
+                <div class="text-body-1">{{ formatearFechaNac(paciente.fecha_nacimiento) }}</div>
+              </v-col>
+              <v-col cols="6" md="2">
                 <div class="label-info">EDAD</div>
                 <div class="text-body-1">{{ paciente.edad || "-" }} años</div>
               </v-col>
@@ -377,8 +381,8 @@ export default {
         apellido: this.paciente.apellido,
         nombre: this.paciente.nombre,
         dni: this.paciente.dni,
+        fecha_nacimiento: this.paciente.fecha_nacimiento || "",
         edad: this.paciente.edad,
-        genero: this.paciente.genero === 0 ? "Masculino" : "Femenino",
         genero: this.paciente.genero === 0 ? "Masculino" : "Femenino",
         diabetico: mapeoValor(this.paciente.diabetes),
         asma: mapeoValor(this.paciente.asma),
@@ -447,6 +451,11 @@ export default {
     },
     formatearFecha(f) {
       return f ? new Date(f).toLocaleDateString("es-AR") : "-";
+    },
+    formatearFechaNac(f) {
+      if (!f) return "-";
+      const [year, month, day] = f.split("-");
+      return `${day}/${month}/${year}`;
     },
   },
 };

@@ -23,8 +23,9 @@ class Visita(Base):
     fecha_actualizacion = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Movemos todos los datos clínicos aquí
+    fecha_nacimiento = Column(String, nullable=True)
     edad = Column(Float)
-    genero = Column(Float) 
+    genero = Column(Float)
     fumo_100_cigarrillos = Column(Float) 
     consumo_alcohol_ultimo_año = Column(Float)
     actividad_deportiva_moderada_x_semana = Column(Float)

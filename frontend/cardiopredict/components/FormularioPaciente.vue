@@ -184,19 +184,47 @@
                   :rules="[(v) => !!v || 'Requerido']"
                 />
               </v-col>
-              <v-col cols="12" md="2" offset-md="1">
-                <p class="custom-label">Edad</p>
-                <v-text-field
-                  v-model="form.edad"
-                  solo
-                  dark
-                  dense
-                  hide-details="auto"
-                  background-color="#4a4444"
-                  :readonly="esCampoBloqueado('edad')"
-                  :class="{ 'input-bloqueado': esCampoBloqueado('edad') }"
-                  :rules="[(v) => !!v || 'Requerido']"
-                />
+              <v-col cols="12" md="3" offset-md="1">
+                <p class="custom-label">Fecha de nacimiento</p>
+                <v-menu
+                  v-model="menuFechaNac"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  offset-y
+                  max-width="290px"
+                  :disabled="esCampoBloqueado('fecha_nacimiento')"
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-text-field
+                      :value="formatearFechaAR(form.fecha_nacimiento)"
+                      v-bind="attrs"
+                      v-on="esCampoBloqueado('fecha_nacimiento') ? {} : on"
+                      solo
+                      dark
+                      dense
+                      hide-details="auto"
+                      background-color="#4a4444"
+                      readonly
+                      :class="{ 'input-bloqueado': esCampoBloqueado('fecha_nacimiento') }"
+                      :rules="[() => !!form.fecha_nacimiento || 'Requerido']"
+                    >
+                      <template v-slot:append>
+                        <v-icon x-small color="grey lighten-1">fas fa-calendar-alt</v-icon>
+                      </template>
+                    </v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="form.fecha_nacimiento"
+                    @input="menuFechaNac = false"
+                    no-title
+                    dark
+                    locale="es"
+                    :max="hoy"
+                  />
+                </v-menu>
+                <div v-if="form.edad !== '' && form.edad !== null" class="grey--text text--lighten-1 caption mt-1">
+                  Edad: {{ form.edad }} años
+                </div>
               </v-col>
             </v-row>
             <v-divider class="grey darken-3 mb-6"></v-divider>
@@ -410,6 +438,8 @@ export default {
       bloqueoEdicion: this.modoEdicion,
       form: this.inicializarForm(),
       camposPersistidos: [],
+      menuFechaNac: false,
+      hoy: new Date().toISOString().substr(0, 10),
       itemsCompletos: [
         { text: "Sí", value: OpcionesCompletas.SI },
         { text: "No", value: OpcionesCompletas.NO },
@@ -562,6 +592,12 @@ export default {
     ];
   },
   watch: {
+    "form.fecha_nacimiento"(val) {
+      if (val && !this.esCampoBloqueado("fecha_nacimiento")) {
+        this.form.edad = this.calcularEdad(val);
+      }
+    },
+
     async "form.dni"(newDni) {
       if (newDni) {
         try {
@@ -574,6 +610,20 @@ export default {
             this.form.dni = pacienteExistente.dni;
             this.form.genero =
               pacienteExistente.genero === 0 ? "Masculino" : "Femenino";
+
+            // Recuperar fecha_nacimiento de la visita más reciente que la tenga
+            if (pacienteExistente.visitas && pacienteExistente.visitas.length > 0) {
+              const visitaConFecha = [...pacienteExistente.visitas]
+                .reverse()
+                .find((v) => v.fecha_nacimiento);
+              if (visitaConFecha) {
+                this.form.fecha_nacimiento = visitaConFecha.fecha_nacimiento;
+                // Recalcular edad con la fecha de HOY para esta nueva visita
+                this.form.edad = this.calcularEdad(visitaConFecha.fecha_nacimiento);
+                if (!this.camposPersistidos.includes("fecha_nacimiento"))
+                  this.camposPersistidos.push("fecha_nacimiento");
+              }
+            }
 
             if (!this.camposPersistidos.includes("nombre"))
               this.camposPersistidos.push("nombre");
@@ -617,6 +667,22 @@ export default {
   },
 
   methods: {
+    formatearFechaAR(val) {
+      if (!val) return "";
+      const [year, month, day] = val.split("-");
+      return `${day}/${month}/${year}`;
+    },
+
+    calcularEdad(fechaNacimiento) {
+      if (!fechaNacimiento) return "";
+      const hoy = new Date();
+      const nac = new Date(fechaNacimiento);
+      let edad = hoy.getFullYear() - nac.getFullYear();
+      const m = hoy.getMonth() - nac.getMonth();
+      if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+      return edad;
+    },
+
     esCampoBloqueado(campo) {
       return this.camposPersistidos.includes(campo);
     },
@@ -688,6 +754,7 @@ export default {
         apellido: this.form.apellido,
 
         // Datos de la Visita (Clínicos)
+        fecha_nacimiento: this.form.fecha_nacimiento || null,
         edad: parseInt(this.form.edad) || 0,
         genero: this.form.genero === "Masculino" ? 0.0 : 1.0,
         fumo_100_cigarrillos:
@@ -752,6 +819,7 @@ export default {
         apellido: this.datosIniciales.apellido || "",
         nombre: this.datosIniciales.nombre || "",
         dni: this.datosIniciales.dni || "",
+        fecha_nacimiento: this.datosIniciales.fecha_nacimiento || "",
         edad: this.datosIniciales.edad || "",
         genero: this.datosIniciales.genero || null,
         diabetico: null,
