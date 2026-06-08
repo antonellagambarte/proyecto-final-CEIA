@@ -1,21 +1,127 @@
 <template>
   <v-container fluid class="main-container pa-0">
+
+    <!-- MODAL DE AYUDA -->
+    <v-dialog v-model="modalAyuda" max-width="620" scrollable>
+      <v-card color="#252525" dark>
+        <v-card-title class="d-flex align-center py-5 px-6" style="border-bottom: 1px solid #3a3a3a">
+          <v-icon color="cyan lighten-2" class="mr-3">fas fa-question-circle</v-icon>
+          <span class="white--text text-h6 font-weight-light">¿Cómo leer este gráfico?</span>
+          <v-spacer></v-spacer>
+          <v-btn icon small @click="modalAyuda = false">
+            <v-icon small color="grey lighten-1">fas fa-times</v-icon>
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="px-6 pt-6 pb-2" style="max-height: 70vh; overflow-y: auto">
+
+          <p class="grey--text text--lighten-1 body-2 mb-6">
+            Este gráfico muestra cuáles características del paciente
+            <strong class="white--text">aumentaron</strong> o
+            <strong class="white--text">redujeron</strong> su probabilidad de riesgo cardiovascular,
+            y en qué medida influyó cada una en el resultado.
+          </p>
+
+          <!-- PROBABILIDAD DE REFERENCIA -->
+          <div class="mb-6">
+            <div class="d-flex align-center mb-3">
+              <div style="width: 3px; height: 22px; background: rgba(0,229,255,0.8); border-radius: 2px" class="mr-3"></div>
+              <span class="white--text font-weight-medium">La probabilidad de referencia</span>
+            </div>
+            <p class="grey--text text--lighten-1 body-2 mb-0" style="padding-left: 18px">
+              Es la probabilidad promedio de riesgo cardiovascular calculada sobre la
+              población de referencia utilizada para entrenar el modelo. Representa el punto
+              de partida antes de considerar los datos individuales de este paciente.
+            </p>
+          </div>
+
+          <v-divider class="grey darken-3 mb-6"></v-divider>
+
+          <!-- EJEMPLOS DE BARRAS -->
+          <div class="mb-2">
+            <span class="white--text font-weight-medium d-block mb-5">Las barras</span>
+
+            <!-- Barra positiva (roja) -->
+            <div class="d-flex align-center mb-5">
+              <div style="
+                width: 130px; min-width: 130px; height: 30px;
+                background: linear-gradient(90deg, #ef5350, #ff7043);
+                clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+                border-radius: 4px;
+              " class="mr-5"></div>
+              <div>
+                <div class="red--text text--lighten-1 caption font-weight-bold mb-1">INCREMENTA LA PROBABILIDAD DE RIESGO →</div>
+                <p class="grey--text text--lighten-1 body-2 mb-0">
+                  Esta característica aumentó la probabilidad de riesgo cardiovascular
+                  por encima de la referencia. Cuanto más larga la barra, mayor es su peso en el resultado.
+                </p>
+              </div>
+            </div>
+
+            <!-- Barra negativa (cyan) -->
+            <div class="d-flex align-center mb-2">
+              <div style="
+                width: 130px; min-width: 130px; height: 30px;
+                background: linear-gradient(90deg, #00bcd4, #26c6da);
+                clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%);
+                border-radius: 4px;
+              " class="mr-5"></div>
+              <div>
+                <div class="cyan--text text--lighten-1 caption font-weight-bold mb-1">← REDUCE LA PROBABILIDAD DE RIESGO</div>
+                <p class="grey--text text--lighten-1 body-2 mb-0">
+                  Esta característica redujo la probabilidad de riesgo cardiovascular
+                  por debajo de la referencia. Cuanto más larga la barra, mayor es su peso en el resultado.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <v-divider class="grey darken-3 my-5"></v-divider>
+
+          <p class="grey--text caption mb-4">
+            El número dentro de cada barra indica cuánto desplazó ese factor la probabilidad
+            de riesgo, en la misma escala que el resultado final (0 a 1). Por ejemplo, si la
+            probabilidad de referencia es 0.44 y una barra muestra 0.05, ese factor llevó la
+            probabilidad a 0.49. La suma de todas las barras sobre la probabilidad de
+            referencia da como resultado la probabilidad final estimada para este paciente.
+          </p>
+
+        </v-card-text>
+
+        <v-card-actions class="px-6 py-4" style="border-top: 1px solid #3a3a3a">
+          <v-spacer></v-spacer>
+          <v-btn text color="cyan lighten-2" class="px-6" @click="modalAyuda = false">ENTENDIDO</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-sheet color="transparent" class="px-12 pt-12 pb-6">
       <v-btn text small dark @click="$router.go(-1)" class="mb-4 grey--text">
         <v-icon left small>fas fa-arrow-left</v-icon>
         Volver al informe
       </v-btn>
 
-      <div class="d-flex align-center">
-        <h2 class="white--text text-h4 font-weight-thin">
-          Análisis comparativo de riesgo
-        </h2>
+      <div class="d-flex align-center justify-space-between">
+        <div class="d-flex align-center">
+          <h2 class="white--text text-h4 font-weight-thin">
+            Análisis comparativo de riesgo
+          </h2>
 
-        <v-chip class="ml-4" color="rgb(67, 160, 71)" small label dark>
-          <span class="black--text">
-            {{ paciente.apellido }}, {{ paciente.nombre }}
-          </span>
-        </v-chip>
+          <v-chip class="ml-4" color="rgb(67, 160, 71)" small label dark>
+            <span class="black--text">
+              {{ paciente.apellido }}, {{ paciente.nombre }}
+            </span>
+          </v-chip>
+        </div>
+
+        <v-btn
+          outlined
+          color="cyan lighten-2"
+          @click="modalAyuda = true"
+        >
+          <v-icon left small>fas fa-question-circle</v-icon>
+          ¿Cómo leer el gráfico?
+        </v-btn>
       </div>
     </v-sheet>
 
@@ -114,30 +220,6 @@
             </v-tab-item>
           </v-tabs-items>
 
-          <v-divider class="my-4 grey darken-3"></v-divider>
-
-          <div class="d-flex justify-space-between pt-2 px-2">
-            <div class="cyan--text text--lighten-2 caption">
-              <v-icon x-small color="cyan lighten-2" class="mr-1">
-                fas fa-arrow-down
-              </v-icon>
-
-              Disminuye la predicción estimada
-            </div>
-
-            <div class="red--text text--lighten-2 caption">
-              Aumenta la predicción estimada
-
-              <v-icon x-small color="red lighten-2" class="ml-1">
-                fas fa-arrow-up
-              </v-icon>
-            </div>
-          </div>
-
-          <div class="grey--text text--lighten-1 caption mt-4">
-            Las contribuciones se basan en valores SHAP, que explican cómo cada
-            variable modifica la predicción respecto a un valor base del modelo.
-          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -154,6 +236,7 @@ export default {
       dni: this.$route.query.dni,
       tab: 0,
       cargando: true,
+      modalAyuda: false,
       paciente: {},
       resultado: {
         preliminar: { probabilidad: 0, influencias: [] },
