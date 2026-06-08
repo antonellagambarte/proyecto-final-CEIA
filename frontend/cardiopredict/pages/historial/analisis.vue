@@ -338,7 +338,8 @@ export default {
 .grafico-scroll-container {
   overflow-y: auto;
   padding-right: 15px;
-  mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+  padding-bottom: 28px;
+  mask-image: linear-gradient(to bottom, black 92%, transparent 100%);
 }
 
 .grafico-scroll-container::-webkit-scrollbar {

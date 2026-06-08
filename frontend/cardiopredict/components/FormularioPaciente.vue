@@ -916,4 +916,26 @@ export default {
 .cursor-pointer {
   cursor: pointer;
 }
+
+::v-deep .v-date-picker-header__value button {
+  color: #ffffff !important;
+  transition: color 0.2s;
+}
+::v-deep .v-date-picker-header__value button:hover {
+  color: #00e5ff !important;
+}
+
+::v-deep .v-date-picker-years::-webkit-scrollbar {
+  width: 6px;
+}
+::v-deep .v-date-picker-years::-webkit-scrollbar-track {
+  background: transparent;
+}
+::v-deep .v-date-picker-years::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 10px;
+}
+::v-deep .v-date-picker-years::-webkit-scrollbar-thumb:hover {
+  background: #00e5ff;
+}
 </style>
