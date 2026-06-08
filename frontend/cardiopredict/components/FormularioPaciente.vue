@@ -427,13 +427,14 @@ export default {
   props: {
     datosIniciales: { type: Object, default: () => ({}) },
     modoEdicion: { type: Boolean, default: false },
+    pasoInicial: { type: Number, default: 1 },
   },
   data() {
     return {
       modalExito: false,
       modalConfirmacion: false,
       resultadoIA: null,
-      paso: 1,
+      paso: this.pasoInicial,
       formValido: false,
       bloqueoEdicion: this.modoEdicion,
       form: this.inicializarForm(),

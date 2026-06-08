@@ -277,6 +277,7 @@
     <FormularioPaciente
       v-else
       :datosIniciales="datosParaFormulario"
+      :pasoInicial="pasoInicialEdicion"
       :modoEdicion="true"
       @atras="mostrandoEdicion = false"
       @guardado="alGuardar"
@@ -296,6 +297,7 @@ export default {
       mostrandoEdicion: false,
       paciente: {},
       datosParaFormulario: null,
+      pasoInicialEdicion: 1,
       itemsLaboratorio: [
         { label: "COLESTEROL TOTAL", key: "colesterol_total", unit: "mg/dL" },
         { label: "HDL", key: "hdl", unit: "mg/dL" },
@@ -367,6 +369,26 @@ export default {
       }
     },
     irAEditar() {
+      const p = this.paciente;
+      const def = (v) => v !== null && v !== undefined && v !== "";
+
+      const paso2Completo = [
+        "consumo_alcohol_ultimo_año",
+        "actividad_deportiva_moderada_x_semana",
+        "fumo_100_cigarrillos",
+        "anhedonia",
+      ].every((k) => def(p[k]));
+
+      const paso3Completo =
+        paso2Completo &&
+        ["fam_cardio", "fam_diabetes", "fam_asma", "altura", "peso",
+          "presion_sistolica_final", "presion_diastolica_final",
+        ].every((k) => def(p[k]));
+
+      if (!paso2Completo) this.pasoInicialEdicion = 2;
+      else if (!paso3Completo) this.pasoInicialEdicion = 3;
+      else this.pasoInicialEdicion = 4;
+
       const mapeoValor = (v) => {
         if (v === 1.0) return "S";
         if (v === 2.0) return "N";
